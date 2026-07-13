@@ -89,31 +89,34 @@ function Page() {
   });
 
   const { data: students } = useQuery({
-    queryKey: ["stud", stage, grade],
-    queryFn: async () =>
-      (await supabase
+    queryKey: ["stud", stage, grade, yearId ?? ""],
+    queryFn: async () => {
+      let q = supabase
         .from("student_enrollments")
         .select("user_id, profiles!student_enrollments_user_id_profiles_fkey(full_name)")
         .eq("stage_group", stage as never)
-        .eq("grade_level", grade as never)).data ?? [],
+        .eq("grade_level", grade as never);
+      if (yearId) q = q.eq("academic_year_id", yearId as never);
+      return (await q).data ?? [];
+    },
   });
 
   const cellReady = !!subject && (term === "midyear" || term === "final" || month !== null);
 
   const cellMaxFn = useServerFn(getGradeCellMax);
-  const maxKey = ["grade-cell-max", subject, term, month] as const;
+  const maxKey = ["grade-cell-max", subject, term, month, yearId ?? ""] as const;
   const { data: cellMaxData } = useQuery({
     queryKey: maxKey,
     enabled: cellReady,
-    queryFn: () => cellMaxFn({ data: { subject_id: subject, term, month } }),
+    queryFn: () => cellMaxFn({ data: { subject_id: subject, term, month, year_id: yearId ?? null } }),
   });
 
   const gradesFn = useServerFn(listGradesForCell);
-  const gradesKey = ["grades-cell", subject, term, month] as const;
+  const gradesKey = ["grades-cell", subject, term, month, yearId ?? ""] as const;
   const { data: cellGrades } = useQuery({
     queryKey: gradesKey,
     enabled: cellReady,
-    queryFn: () => gradesFn({ data: { subject_id: subject, term, month } }),
+    queryFn: () => gradesFn({ data: { subject_id: subject, term, month, year_id: yearId ?? null } }),
   });
   const gradeMap = new Map<string, GradeCellRow>((cellGrades ?? []).map((g) => [g.student_id, g]));
 
