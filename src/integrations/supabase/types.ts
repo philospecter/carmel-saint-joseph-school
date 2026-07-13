@@ -654,7 +654,7 @@ export type Database = {
       question_type: "mcq" | "written"
       request_status: "pending" | "approved" | "rejected"
       stage_group: "primary_1_2" | "primary_3_6" | "preparatory" | "secondary"
-      term_type: "term_1" | "term_2"
+      term_type: "term_1" | "term_2" | "midyear" | "final"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -804,7 +804,7 @@ export const Constants = {
       question_type: ["mcq", "written"],
       request_status: ["pending", "approved", "rejected"],
       stage_group: ["primary_1_2", "primary_3_6", "preparatory", "secondary"],
-      term_type: ["term_1", "term_2"],
+      term_type: ["term_1", "term_2", "midyear", "final"],
     },
   },
 } as const
