@@ -428,7 +428,15 @@ export type Database = {
           status?: Database["public"]["Enums"]["request_status"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "signup_requests_user_id_profiles_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stage_manager_assignments: {
         Row: {
@@ -446,7 +454,15 @@ export type Database = {
           stage_group?: Database["public"]["Enums"]["stage_group"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "stage_manager_assignments_user_id_profiles_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       student_enrollments: {
         Row: {
@@ -467,7 +483,15 @@ export type Database = {
           stage_group?: Database["public"]["Enums"]["stage_group"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "student_enrollments_user_id_profiles_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subjects: {
         Row: {
@@ -518,6 +542,13 @@ export type Database = {
             columns: ["subject_id"]
             isOneToOne: false
             referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teacher_assignments_teacher_id_profiles_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
