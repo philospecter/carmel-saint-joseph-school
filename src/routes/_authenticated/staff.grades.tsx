@@ -48,6 +48,8 @@ function Page() {
   const { t } = useI18n();
   const { data: me } = useMe();
   const qc = useQueryClient();
+  const { year: yearId } = Route.useSearch();
+  const readOnly = !!yearId;
   const isAdmin = !!me?.roles.includes("admin");
   const stages = isAdmin ? [...STAGE_GROUPS] : me?.stages ?? [];
   const [stage, setStage] = useState<string>(stages[0] ?? "primary_1_2");
