@@ -113,28 +113,28 @@ function Page() {
   const gradesForStage = GRADES_BY_STAGE[stage as keyof typeof GRADES_BY_STAGE] ?? [];
   const showMonth = term === "term_1" || term === "term_2";
 
-  // Local session max (used only before any row exists in this cell).
-  const [pendingMax, setPendingMax] = useState<string>("");
-  const [editMaxOpen, setEditMaxOpen] = useState(false);
-  const [editMaxValue, setEditMaxValue] = useState<string>("");
+  // Draft max input in the filter bar (editable only while the cell is empty).
+  const [draftMax, setDraftMax] = useState<string>("");
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
 
   useEffect(() => {
-    setPendingMax("");
-    setEditMaxOpen(false);
+    setDraftMax("");
+    setConfirmClearOpen(false);
   }, [subject, term, month]);
 
   const effectiveMax = cellMaxData?.max_score ?? null;
+  const locked = effectiveMax !== null;
+  const maxValue = locked ? String(effectiveMax) : draftMax;
+  const sessionMax = locked ? (effectiveMax as number) : (Number(draftMax) || 0);
+  const rosterReady = cellReady && sessionMax > 0;
 
-  const rescaleFn = useServerFn(setGradeCellMax);
-  const rescaleM = useMutation({
-    mutationFn: () => {
-      const v = Number(editMaxValue);
-      if (!Number.isFinite(v) || v <= 0) throw new Error(t("grades.session_max_invalid"));
-      return rescaleFn({ data: { subject_id: subject, term, month, new_max: v } });
-    },
+  const clearFn = useServerFn(clearGradeCell);
+  const clearM = useMutation({
+    mutationFn: () => clearFn({ data: { subject_id: subject, term, month } }),
     onSuccess: () => {
-      toast.success(t("grades.session_max_updated"));
-      setEditMaxOpen(false);
+      toast.success(t("grades.cell_cleared"));
+      setConfirmClearOpen(false);
+      setDraftMax("");
       qc.invalidateQueries({ queryKey: maxKey });
       qc.invalidateQueries({ queryKey: gradesKey });
     },
@@ -143,7 +143,7 @@ function Page() {
 
   return (
     <Section title={t("nav.grades")}>
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className="flex flex-wrap gap-2 mb-4 items-end">
         <Select value={stage} onValueChange={(v) => { setStage(v); setGrade(GRADES_BY_STAGE[v as keyof typeof GRADES_BY_STAGE][0]); setSubject(""); }}>
           <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
           <SelectContent>{stages.map((s) => <SelectItem key={s} value={s}>{t(`stage.${s}`)}</SelectItem>)}</SelectContent>
@@ -172,127 +172,98 @@ function Page() {
             <SelectContent>{configuredMonths.map((m) => <SelectItem key={m} value={String(m)}>{MONTH_LABEL[m]}</SelectItem>)}</SelectContent>
           </Select>
         )}
+        <div className="flex flex-col gap-1">
+          <Label className="text-xs text-muted-foreground">{t("grades.session_max")}</Label>
+          <div className="flex items-center gap-1">
+            <Input
+              type="number"
+              min={1}
+              step="any"
+              className="w-28"
+              value={maxValue}
+              placeholder="e.g. 60"
+              disabled={!cellReady || locked}
+              readOnly={locked}
+              onChange={(e) => setDraftMax(e.target.value)}
+            />
+            {locked && (
+              <Button
+                size="icon"
+                variant="outline"
+                title={t("grades.edit_session_max")}
+                onClick={() => setConfirmClearOpen(true)}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            )}
+            {locked && !confirmClearOpen && (
+              <Lock className="h-3.5 w-3.5 text-muted-foreground ms-1" />
+            )}
+          </div>
+        </div>
       </div>
 
       {!subject ? (
         <EmptyState text="Pick a subject." />
       ) : showMonth && month === null ? (
         <EmptyState text={t("settings.no_months")} />
-      ) : effectiveMax === null && !(Number(pendingMax) > 0) ? (
-        // Cell empty — prompt for session max before roster appears
-        <div className="rounded-lg border p-6 space-y-3 max-w-md">
-          <div className="font-serif text-lg">{t("grades.set_session_max")}</div>
-          <p className="text-sm text-muted-foreground">{t("grades.set_session_max_body")}</p>
-          <div className="flex items-center gap-2">
-            <Input
-              type="number"
-              min={1}
-              step="any"
-              className="w-32"
-              value={pendingMax}
-              placeholder="e.g. 60"
-              onChange={(e) => setPendingMax(e.target.value)}
-            />
-            <Button
-              onClick={() => {
-                const v = Number(pendingMax);
-                if (!Number.isFinite(v) || v <= 0) return toast.error(t("grades.session_max_invalid"));
-                // Nothing to persist yet — this value is attached to the first insert.
-                toast.success(fmt(t("grades.session_max_ready"), { max: v }));
-              }}
-              disabled={!pendingMax.trim()}
-            >
-              {t("common.save")}
-            </Button>
-          </div>
-        </div>
-
+      ) : !rosterReady ? (
+        <EmptyState text={t("grades.set_max_hint")} />
       ) : (students ?? []).length === 0 ? (
         <EmptyState text={t("common.empty")} />
       ) : (
-        <>
-          {/* Session max banner */}
-          <div className="mb-3 flex items-center justify-between rounded-lg border bg-secondary/30 p-3">
-            <div className="text-sm">
-              <span className="text-muted-foreground">{t("grades.session_max")}: </span>
-              <span className="font-serif text-base">{effectiveMax !== null ? effectiveMax : (Number(pendingMax) || "—")}</span>
-              {(cellMaxData?.row_count ?? 0) > 0 && (
-                <span className="text-xs text-muted-foreground ms-2">
-                  {fmt(t("grades.session_row_count"), { count: cellMaxData!.row_count })}
-                </span>
-              )}
-            </div>
-            {effectiveMax !== null && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => { setEditMaxValue(String(effectiveMax)); setEditMaxOpen(true); }}
-              >
-                <Pencil className="h-3 w-3 me-1" />
-                {t("grades.edit_session_max")}
-              </Button>
-            )}
-          </div>
-
-          <div className="rounded-lg border divide-y">
-            {students!.map((s) => {
-              const p = (s as unknown as { profiles?: { full_name: string } }).profiles;
-              const existing = gradeMap.get(s.user_id) ?? null;
-              const sessionMax = effectiveMax !== null ? effectiveMax : (Number(pendingMax) || 0);
-              return (
-                <GradeRow
-                  key={s.user_id}
-                  studentId={s.user_id}
-                  studentName={p?.full_name ?? "—"}
-                  existing={existing}
-                  subjectId={subject}
-                  term={term}
-                  month={month}
-                  sessionMax={sessionMax}
-                  enteredById={me?.userId ?? ""}
-                  showAudit={isAdmin}
-                  onSaved={() => {
-                    qc.invalidateQueries({ queryKey: gradesKey });
-                    qc.invalidateQueries({ queryKey: maxKey });
-                  }}
-                />
-              );
-            })}
-          </div>
-
-          <Dialog open={editMaxOpen} onOpenChange={setEditMaxOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{t("grades.edit_session_max")}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  {fmt(t("grades.rescale_warning"), { count: cellMaxData?.row_count ?? 0 })}
-                </p>
-                <div>
-                  <Label>{t("grades.session_max")}</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    step="any"
-                    value={editMaxValue}
-                    onChange={(e) => setEditMaxValue(e.target.value)}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setEditMaxOpen(false)}>{t("common.cancel")}</Button>
-                <Button onClick={() => rescaleM.mutate()} disabled={rescaleM.isPending || !editMaxValue.trim()}>
-                  {rescaleM.isPending ? t("common.loading") : t("common.save")}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </>
+        <div className="rounded-lg border divide-y">
+          {students!.map((s) => {
+            const p = (s as unknown as { profiles?: { full_name: string } }).profiles;
+            const existing = gradeMap.get(s.user_id) ?? null;
+            return (
+              <GradeRow
+                key={s.user_id}
+                studentId={s.user_id}
+                studentName={p?.full_name ?? "—"}
+                existing={existing}
+                subjectId={subject}
+                term={term}
+                month={month}
+                sessionMax={sessionMax}
+                enteredById={me?.userId ?? ""}
+                showAudit={isAdmin}
+                onSaved={() => {
+                  qc.invalidateQueries({ queryKey: gradesKey });
+                  qc.invalidateQueries({ queryKey: maxKey });
+                }}
+              />
+            );
+          })}
+        </div>
       )}
+
+      <Dialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("grades.edit_session_max")}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {fmt(t("grades.clear_warning"), { count: cellMaxData?.row_count ?? 0 })}
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmClearOpen(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => clearM.mutate()}
+              disabled={clearM.isPending}
+            >
+              {clearM.isPending ? t("common.loading") : t("common.delete")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Section>
   );
 }
+
 
 function GradeRow({
   studentId, studentName, existing, subjectId, term, month, sessionMax, enteredById, showAudit, onSaved,
