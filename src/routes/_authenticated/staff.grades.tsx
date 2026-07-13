@@ -202,7 +202,7 @@ function Page() {
               readOnly={locked}
               onChange={(e) => setDraftMax(e.target.value)}
             />
-            {locked && (
+            {locked && !readOnly && (
               <Button
                 size="icon"
                 variant="outline"
