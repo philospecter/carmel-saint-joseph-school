@@ -283,7 +283,7 @@ function Page() {
 
 
 function GradeRow({
-  studentId, studentName, existing, subjectId, term, month, sessionMax, enteredById, showAudit, onSaved,
+  studentId, studentName, existing, subjectId, term, month, sessionMax, enteredById, showAudit, readOnly, onSaved,
 }: {
   studentId: string;
   studentName: string;
@@ -294,6 +294,7 @@ function GradeRow({
   sessionMax: number;
   enteredById: string;
   showAudit: boolean;
+  readOnly?: boolean;
   onSaved: () => void;
 }) {
   const { t } = useI18n();
