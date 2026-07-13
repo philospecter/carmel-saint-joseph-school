@@ -87,28 +87,34 @@ export type Database = {
           committed_at: string
           entered_by: string | null
           id: string
+          month: number
           score: number
           student_id: string
           subject_id: string
           term: Database["public"]["Enums"]["term_type"]
+          updated_at: string
         }
         Insert: {
           committed_at?: string
           entered_by?: string | null
           id?: string
+          month: number
           score: number
           student_id: string
           subject_id: string
           term: Database["public"]["Enums"]["term_type"]
+          updated_at?: string
         }
         Update: {
           committed_at?: string
           entered_by?: string | null
           id?: string
+          month?: number
           score?: number
           student_id?: string
           subject_id?: string
           term?: Database["public"]["Enums"]["term_type"]
+          updated_at?: string
         }
         Relationships: [
           {
@@ -130,6 +136,7 @@ export type Database = {
           due_at: string | null
           id: string
           kind: Database["public"]["Enums"]["homework_kind"]
+          link_url: string | null
           locked: boolean
           teacher_assignment_id: string
           title: string
@@ -143,6 +150,7 @@ export type Database = {
           due_at?: string | null
           id?: string
           kind?: Database["public"]["Enums"]["homework_kind"]
+          link_url?: string | null
           locked?: boolean
           teacher_assignment_id: string
           title: string
@@ -156,6 +164,7 @@ export type Database = {
           due_at?: string | null
           id?: string
           kind?: Database["public"]["Enums"]["homework_kind"]
+          link_url?: string | null
           locked?: boolean
           teacher_assignment_id?: string
           title?: string
