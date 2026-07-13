@@ -139,6 +139,7 @@ export type Database = {
           committed_at: string
           entered_by: string | null
           id: string
+          max_score: number
           month: number | null
           score: number
           student_id: string
@@ -151,6 +152,7 @@ export type Database = {
           committed_at?: string
           entered_by?: string | null
           id?: string
+          max_score: number
           month?: number | null
           score: number
           student_id: string
@@ -163,6 +165,7 @@ export type Database = {
           committed_at?: string
           entered_by?: string | null
           id?: string
+          max_score?: number
           month?: number | null
           score?: number
           student_id?: string
@@ -590,7 +593,7 @@ export type Database = {
           {
             foreignKeyName: "student_enrollments_user_id_profiles_fkey"
             columns: ["user_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -600,21 +603,18 @@ export type Database = {
         Row: {
           grade_level: Database["public"]["Enums"]["grade_level"]
           id: string
-          max_score: number | null
           name: string
           stage_group: Database["public"]["Enums"]["stage_group"]
         }
         Insert: {
           grade_level: Database["public"]["Enums"]["grade_level"]
           id?: string
-          max_score?: number | null
           name: string
           stage_group: Database["public"]["Enums"]["stage_group"]
         }
         Update: {
           grade_level?: Database["public"]["Enums"]["grade_level"]
           id?: string
-          max_score?: number | null
           name?: string
           stage_group?: Database["public"]["Enums"]["stage_group"]
         }
@@ -728,6 +728,15 @@ export type Database = {
       promote_students: {
         Args: { _promotions: Json; _repeats: string[] }
         Returns: undefined
+      }
+      set_grade_cell_max: {
+        Args: {
+          _month: number
+          _new_max: number
+          _subject: string
+          _term: string
+        }
+        Returns: number
       }
       start_new_academic_year: { Args: { _label: string }; Returns: string }
       student_of_stage_manager: {
