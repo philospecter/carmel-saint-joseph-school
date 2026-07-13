@@ -87,7 +87,7 @@ export type Database = {
           committed_at: string
           entered_by: string | null
           id: string
-          month: number
+          month: number | null
           score: number
           student_id: string
           subject_id: string
@@ -98,7 +98,7 @@ export type Database = {
           committed_at?: string
           entered_by?: string | null
           id?: string
-          month: number
+          month?: number | null
           score: number
           student_id: string
           subject_id: string
@@ -109,7 +109,7 @@ export type Database = {
           committed_at?: string
           entered_by?: string | null
           id?: string
-          month?: number
+          month?: number | null
           score?: number
           student_id?: string
           subject_id?: string
@@ -506,18 +506,21 @@ export type Database = {
         Row: {
           grade_level: Database["public"]["Enums"]["grade_level"]
           id: string
+          max_score: number | null
           name: string
           stage_group: Database["public"]["Enums"]["stage_group"]
         }
         Insert: {
           grade_level: Database["public"]["Enums"]["grade_level"]
           id?: string
+          max_score?: number | null
           name: string
           stage_group: Database["public"]["Enums"]["stage_group"]
         }
         Update: {
           grade_level?: Database["public"]["Enums"]["grade_level"]
           id?: string
+          max_score?: number | null
           name?: string
           stage_group?: Database["public"]["Enums"]["stage_group"]
         }
@@ -561,6 +564,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      term_month_settings: {
+        Row: {
+          months: number[]
+          term: Database["public"]["Enums"]["term_type"]
+          updated_at: string
+        }
+        Insert: {
+          months: number[]
+          term: Database["public"]["Enums"]["term_type"]
+          updated_at?: string
+        }
+        Update: {
+          months?: number[]
+          term?: Database["public"]["Enums"]["term_type"]
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
