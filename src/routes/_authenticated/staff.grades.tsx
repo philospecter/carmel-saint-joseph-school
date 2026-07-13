@@ -18,7 +18,12 @@ import { formatSupabaseError } from "@/lib/errors";
 import { listTermMonths } from "@/lib/settings.functions";
 import { listGradesForCell, getGradeCellMax, clearGradeCell, type GradeCellRow } from "@/lib/grades.functions";
 
-export const Route = createFileRoute("/_authenticated/staff/grades")({ component: Page });
+export const Route = createFileRoute("/_authenticated/staff/grades")({
+  validateSearch: (search: Record<string, unknown>): { year?: string } => ({
+    year: typeof search.year === "string" && search.year ? search.year : undefined,
+  }),
+  component: Page,
+});
 
 const MONTH_LABEL = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 type Term = "term_1" | "term_2" | "midyear" | "final";
