@@ -244,6 +244,7 @@ function Page() {
                 sessionMax={sessionMax}
                 enteredById={me?.userId ?? ""}
                 showAudit={isAdmin}
+                readOnly={readOnly}
                 onSaved={() => {
                   qc.invalidateQueries({ queryKey: gradesKey });
                   qc.invalidateQueries({ queryKey: maxKey });
