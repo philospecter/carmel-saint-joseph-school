@@ -9,11 +9,11 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { toast } from "sonner";
-import { AlertTriangle, GraduationCap } from "lucide-react";
+import { AlertTriangle, GraduationCap, Users } from "lucide-react";
 import { useMe } from "@/hooks/use-me";
 import { supabase } from "@/integrations/supabase/client";
 import { formatSupabaseError } from "@/lib/errors";
-import { listAcademicYears, startNewAcademicYear } from "@/lib/academic-years.functions";
+import { listAcademicYears, startNewAcademicYear, pendingPromotionCount } from "@/lib/academic-years.functions";
 import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/staff/year")({ component: Page });
@@ -26,7 +26,14 @@ function Page() {
   const navigate = useNavigate();
   const listFn = useServerFn(listAcademicYears);
   const startFn = useServerFn(startNewAcademicYear);
+  const pendingFn = useServerFn(pendingPromotionCount);
   const { data: years } = useQuery({ queryKey: ["academic-years"], queryFn: () => listFn() });
+  const { data: pendingCount } = useQuery({
+    queryKey: ["pending-promotion-count"],
+    enabled: isAdmin,
+    queryFn: () => pendingFn(),
+  });
+
 
   const [open, setOpen] = useState(false);
   const current = years?.find((y) => y.is_current);
