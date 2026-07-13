@@ -206,11 +206,23 @@ export const updateUserProfile = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
     if (data.enrollment) {
+      const { data: year, error: yErr } = await supabaseAdmin
+        .from("academic_years")
+        .select("id")
+        .eq("is_current", true)
+        .maybeSingle();
+      if (yErr) throw new Error(yErr.message);
+      if (!year) throw new Error("No current academic year");
       const { error } = await supabaseAdmin
         .from("student_enrollments")
         .upsert(
-          { user_id: data.userId, stage_group: data.enrollment.stage_group as never, grade_level: data.enrollment.grade_level as never },
-          { onConflict: "user_id" },
+          {
+            user_id: data.userId,
+            stage_group: data.enrollment.stage_group as never,
+            grade_level: data.enrollment.grade_level as never,
+            academic_year_id: year.id,
+          },
+          { onConflict: "user_id,academic_year_id" },
         );
       if (error) throw new Error(error.message);
     }
