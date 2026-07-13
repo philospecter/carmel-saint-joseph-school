@@ -89,3 +89,24 @@ export const setGradeCellMax = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { affected: Number(affected ?? 0) };
   });
+
+/**
+ * Deletes every grade row in a (subject, term, month, current year) cell.
+ * Used when a staff user changes the max score after data has been entered:
+ * the previous scores are cleared so a new max can be set from scratch.
+ */
+export const clearGradeCell = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { subject_id: string; term: string; month: number | null }) => input)
+  .handler(async ({ data, context }): Promise<{ deleted: number }> => {
+    let q = (context.supabase as any)
+      .from("grades")
+      .delete({ count: "exact" })
+      .eq("subject_id", data.subject_id)
+      .eq("term", data.term);
+    if (data.month === null) q = q.is("month", null);
+    else q = q.eq("month", data.month);
+    const { error, count } = await q;
+    if (error) throw new Error(error.message);
+    return { deleted: Number(count ?? 0) };
+  });
