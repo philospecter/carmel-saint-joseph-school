@@ -1,6 +1,4 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { zodValidator, fallback } from "@tanstack/zod-adapter";
-import { z } from "zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Section, EmptyState } from "@/components/portal/PortalShell";
@@ -19,14 +17,13 @@ import { previewCurrentYearRoster, startYearAndPromote } from "@/lib/academic-ye
 import { useI18n } from "@/lib/i18n";
 import { formatSupabaseError } from "@/lib/errors";
 
-const searchSchema = z.object({
-  label: fallback(z.string(), "").default(""),
-});
-
 export const Route = createFileRoute("/_authenticated/staff/year/promote")({
-  validateSearch: zodValidator(searchSchema),
+  validateSearch: (search: Record<string, unknown>): { label: string } => ({
+    label: typeof search.label === "string" ? search.label : "",
+  }),
   component: Page,
 });
+
 
 const NEXT: Record<string, { stage: string; grade: string } | "graduate"> = {
   p1: { stage: "primary_1_2", grade: "p2" },
