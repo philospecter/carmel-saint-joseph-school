@@ -1,20 +1,33 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Section, EmptyState } from "@/components/portal/PortalShell";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { AlertTriangle } from "lucide-react";
 import { useMe } from "@/hooks/use-me";
-import { previewPromotion, promoteStudents } from "@/lib/academic-years.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { previewCurrentYearRoster, startYearAndPromote } from "@/lib/academic-years.functions";
 import { useI18n } from "@/lib/i18n";
 import { formatSupabaseError } from "@/lib/errors";
 
-export const Route = createFileRoute("/_authenticated/staff/year/promote")({ component: Page });
+const searchSchema = z.object({
+  label: fallback(z.string(), "").default(""),
+});
 
-// Linear grade progression map, matching the DB fallback in promote_students().
+export const Route = createFileRoute("/_authenticated/staff/year/promote")({
+  validateSearch: zodValidator(searchSchema),
+  component: Page,
+});
+
 const NEXT: Record<string, { stage: string; grade: string } | "graduate"> = {
   p1: { stage: "primary_1_2", grade: "p2" },
   p2: { stage: "primary_3_6", grade: "p3" },
@@ -35,11 +48,16 @@ function Page() {
   const { data: me } = useMe();
   const isAdmin = !!me?.roles.includes("admin");
   const navigate = useNavigate();
-  const previewFn = useServerFn(previewPromotion);
-  const promoteFn = useServerFn(promoteStudents);
-  const { data: roster } = useQuery({ queryKey: ["promotion-preview"], queryFn: () => previewFn() });
+  const qc = useQueryClient();
+  const { label } = Route.useSearch();
+
+  const previewFn = useServerFn(previewCurrentYearRoster);
+  const startFn = useServerFn(startYearAndPromote);
+  const { data: roster } = useQuery({ queryKey: ["promotion-preview-current"], queryFn: () => previewFn() });
 
   const [repeats, setRepeats] = useState<Set<string>>(new Set());
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [password, setPassword] = useState("");
 
   const promotions = useMemo(() => {
     if (!roster) return [];
@@ -52,82 +70,163 @@ function Page() {
   }, [roster]);
 
   const submit = useMutation({
-    mutationFn: () => promoteFn({ data: { promotions, repeats: Array.from(repeats) } }),
-    onSuccess: () => {
-      toast.success(t("year.promote_success"));
-      navigate({ to: "/staff" });
+    mutationFn: async () => {
+      if (!label.trim()) throw new Error(t("year.label_required"));
+      if (!me?.email) throw new Error("Missing email");
+      const { error: authErr } = await supabase.auth.signInWithPassword({ email: me.email, password });
+      if (authErr) throw new Error(t("year.password_wrong"));
+      await startFn({
+        data: { label, promotions, repeats: Array.from(repeats) },
+      });
     },
-    onError: (e) => toast.error(formatSupabaseError(e)),
+    onSuccess: async () => {
+      toast.success(t("year.rollover_success"));
+      setConfirmOpen(false);
+      await qc.invalidateQueries();
+      navigate({ to: "/staff/year" });
+    },
+    onError: (e) => {
+      const msg = String((e as Error)?.message ?? "");
+      const isDup = /already exists|duplicate/i.test(msg);
+      toast.error(isDup ? t("year.label_exists") : formatSupabaseError(e));
+    },
   });
 
+  function promoteEntireSchool() {
+    setRepeats(new Set());
+    toast.success(t("year.promote_entire_school"));
+  }
+  function markGroupPromoted(userIds: string[]) {
+    setRepeats((prev) => {
+      const next = new Set(prev);
+      for (const id of userIds) next.delete(id);
+      return next;
+    });
+  }
+
   if (!isAdmin) return <div className="p-8">{t("common.empty")}</div>;
+  if (!label.trim()) {
+    return (
+      <Section title={t("year.promote_title")}>
+        <EmptyState text={t("year.label_required")} />
+        <div className="mt-4">
+          <Button variant="outline" onClick={() => navigate({ to: "/staff/year" })}>{t("common.back")}</Button>
+        </div>
+      </Section>
+    );
+  }
   if (!roster) return null;
-  if (roster.length === 0) return <EmptyState text={t("year.no_students_to_promote")} />;
 
   return (
     <Section
       title={t("year.promote_title")}
       action={
-        <Button onClick={() => submit.mutate()} disabled={submit.isPending}>
-          {submit.isPending ? t("common.loading") : t("year.promote_confirm")}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={promoteEntireSchool}>{t("year.promote_entire_school")}</Button>
+          <Button onClick={() => { setPassword(""); setConfirmOpen(true); }}>{t("year.confirm_and_start")}</Button>
+        </div>
       }
     >
-      <div className="space-y-6">
-        {roster.map((group) => {
-          const isGrad = NEXT[group.grade_level] === "graduate";
-          const next = NEXT[group.grade_level];
-          return (
-            <div key={`${group.stage_group}|${group.grade_level}`} className="rounded-lg border">
-              <div className="p-3 border-b flex items-center justify-between gap-2">
-                <div className="font-serif text-lg">
-                  {isGrad ? (
-                    <>
-                      {t(`grade.${group.grade_level}`)} <span className="text-muted-foreground">→</span>{" "}
-                      <Badge variant="secondary">{t("year.will_graduate")}</Badge>
-                    </>
-                  ) : typeof next === "object" ? (
-                    <>
-                      {t(`grade.${group.grade_level}`)} <span className="text-muted-foreground">→</span>{" "}
-                      {t(`grade.${next.grade}`)}
-                    </>
-                  ) : (
-                    t(`grade.${group.grade_level}`)
-                  )}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {group.students.length} {t("year.students")}
-                </div>
-              </div>
-              <div className="divide-y">
-                {group.students.map((s) => (
-                  <div key={s.user_id} className="p-3 flex items-center justify-between">
-                    <div>{s.full_name}</div>
+      <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm mb-4 flex gap-2">
+        <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600" />
+        <div>
+          <div><strong>{t("year.pending_label")}:</strong> {label}</div>
+          <div className="mt-1">{t("year.promote_review_intro")}</div>
+          <div className="mt-1 text-xs text-muted-foreground">{t("year.abandon_note")}</div>
+        </div>
+      </div>
+
+      {roster.length === 0 ? (
+        <EmptyState text={t("year.no_students_to_promote")} />
+      ) : (
+        <div className="space-y-6">
+          {roster.map((group) => {
+            const isGrad = NEXT[group.grade_level] === "graduate";
+            const next = NEXT[group.grade_level];
+            const groupIds = group.students.map((s) => s.user_id);
+            const anyRepeat = groupIds.some((id) => repeats.has(id));
+            return (
+              <div key={`${group.stage_group}|${group.grade_level}`} className="rounded-lg border">
+                <div className="p-3 border-b flex items-center justify-between gap-2 flex-wrap">
+                  <div className="font-serif text-lg">
                     {isGrad ? (
-                      <Badge variant="secondary">{t("year.will_graduate")}</Badge>
+                      <>
+                        {t(`grade.${group.grade_level}`)} <span className="text-muted-foreground">→</span>{" "}
+                        <Badge variant="secondary">{t("year.will_graduate")}</Badge>
+                      </>
+                    ) : typeof next === "object" ? (
+                      <>
+                        {t(`grade.${group.grade_level}`)} <span className="text-muted-foreground">→</span>{" "}
+                        {t(`grade.${next.grade}`)}
+                      </>
                     ) : (
-                      <label className="flex items-center gap-2 text-sm cursor-pointer">
-                        <Checkbox
-                          checked={repeats.has(s.user_id)}
-                          onCheckedChange={(v) => {
-                            setRepeats((prev) => {
-                              const next = new Set(prev);
-                              if (v) next.add(s.user_id);
-                              else next.delete(s.user_id);
-                              return next;
-                            });
-                          }}
-                        />
-                        {t("year.repeat")}
-                      </label>
+                      t(`grade.${group.grade_level}`)
                     )}
                   </div>
-                ))}
+                  <div className="flex items-center gap-2">
+                    <div className="text-xs text-muted-foreground">{group.students.length} {t("year.students")}</div>
+                    {!isGrad && anyRepeat && (
+                      <Button size="sm" variant="outline" onClick={() => markGroupPromoted(groupIds)}>
+                        {t("year.mark_all_promoted")}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <div className="divide-y">
+                  {group.students.map((s) => (
+                    <div key={s.user_id} className="p-3 flex items-center justify-between">
+                      <div>{s.full_name}</div>
+                      {isGrad ? (
+                        <Badge variant="secondary">{t("year.will_graduate")}</Badge>
+                      ) : (
+                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                          <Checkbox
+                            checked={repeats.has(s.user_id)}
+                            onCheckedChange={(v) => {
+                              setRepeats((prev) => {
+                                const next = new Set(prev);
+                                if (v) next.add(s.user_id);
+                                else next.delete(s.user_id);
+                                return next;
+                              });
+                            }}
+                          />
+                          {t("year.repeat")}
+                        </label>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{t("year.confirm_and_start")}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm flex gap-2">
+              <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600" />
+              <div>
+                <div><strong>{t("year.pending_label")}:</strong> {label}</div>
+                <div className="text-xs mt-1">{repeats.size} {t("year.repeat")}</div>
               </div>
             </div>
-          );
-        })}
-      </div>
+            <div className="space-y-1">
+              <Label>{t("year.password_prompt")}</Label>
+              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={submit.isPending}>{t("common.cancel")}</Button>
+            <Button onClick={() => submit.mutate()} disabled={submit.isPending || !password}>
+              {submit.isPending ? t("common.loading") : t("year.confirm_and_start")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Section>
   );
 }
