@@ -299,7 +299,7 @@ function GradeRow({
 }) {
   const { t } = useI18n();
   const hasSaved = existing !== null;
-  const [unlocked, setUnlocked] = useState(!hasSaved);
+  const [unlocked, setUnlocked] = useState(!hasSaved && !readOnly);
   const [value, setValue] = useState<string>(existing ? String(existing.score) : "");
 
   useEffect(() => {
