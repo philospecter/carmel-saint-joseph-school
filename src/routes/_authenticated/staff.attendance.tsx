@@ -11,12 +11,19 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { formatSupabaseError } from "@/lib/errors";
 
-export const Route = createFileRoute("/_authenticated/staff/attendance")({ component: Page });
+export const Route = createFileRoute("/_authenticated/staff/attendance")({
+  validateSearch: (search: Record<string, unknown>): { year?: string } => ({
+    year: typeof search.year === "string" && search.year ? search.year : undefined,
+  }),
+  component: Page,
+});
 
 function Page() {
   const { t } = useI18n();
   const { data: me } = useMe();
   const qc = useQueryClient();
+  const { year: yearId } = Route.useSearch();
+  const readOnly = !!yearId;
   const isAdmin = !!me?.roles.includes("admin");
   const stages = isAdmin ? [...STAGE_GROUPS] : me?.stages ?? [];
   const [stage, setStage] = useState<string>(stages[0] ?? "primary_1_2");
@@ -24,17 +31,29 @@ function Page() {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
 
   const { data: students } = useQuery({
-    queryKey: ["staff-att-students", stage, grade],
-    queryFn: async () => (await supabase.from("student_enrollments").select("user_id, profiles!student_enrollments_user_id_profiles_fkey(full_name, national_id)").eq("stage_group", stage as never).eq("grade_level", grade as never)).data ?? [],
+    queryKey: ["staff-att-students", stage, grade, yearId ?? ""],
+    queryFn: async () => {
+      let q = supabase
+        .from("student_enrollments")
+        .select("user_id, profiles!student_enrollments_user_id_profiles_fkey(full_name, national_id)")
+        .eq("stage_group", stage as never)
+        .eq("grade_level", grade as never);
+      if (yearId) q = q.eq("academic_year_id", yearId as never);
+      return (await q).data ?? [];
+    },
   });
   const { data: recs } = useQuery({
-    queryKey: ["staff-att-recs", stage, grade, date],
-    queryFn: async () => (await supabase.from("attendance").select("*").eq("date", date)).data ?? [],
+    queryKey: ["staff-att-recs", stage, grade, date, yearId ?? ""],
+    queryFn: async () => {
+      let q = supabase.from("attendance").select("*").eq("date", date);
+      if (yearId) q = q.eq("academic_year_id", yearId as never);
+      return (await q).data ?? [];
+    },
   });
   const map = new Map((recs ?? []).map((r) => [r.student_id, r]));
 
   async function mark(studentId: string, status: "present" | "absent" | "late") {
-    if (!me) return;
+    if (!me || readOnly) return;
     const existing = map.get(studentId);
     const payload = { student_id: studentId, date, status, recorded_by: me.userId };
     const q = existing
@@ -42,11 +61,11 @@ function Page() {
       : supabase.from("attendance").insert(payload);
     const { error } = await q;
     if (error) return toast.error(formatSupabaseError(error));
-    qc.invalidateQueries({ queryKey: ["staff-att-recs", stage, grade, date] });
+    qc.invalidateQueries({ queryKey: ["staff-att-recs", stage, grade, date, yearId ?? ""] });
   }
 
   async function markAllPresent() {
-    if (!me || !students || students.length === 0) return;
+    if (!me || !students || students.length === 0 || readOnly) return;
     const toInsert: Array<{ student_id: string; date: string; status: "present"; recorded_by: string }> = [];
     const toUpdate: Array<{ id: string }> = [];
     for (const s of students) {
@@ -63,7 +82,7 @@ function Page() {
     const results = await Promise.all(ops);
     const err = results.find((r) => r?.error);
     if (err?.error) return toast.error(formatSupabaseError(err.error));
-    qc.invalidateQueries({ queryKey: ["staff-att-recs", stage, grade, date] });
+    qc.invalidateQueries({ queryKey: ["staff-att-recs", stage, grade, date, yearId ?? ""] });
     toast.success(t("attendance.mark_all_present"));
   }
 
@@ -71,6 +90,11 @@ function Page() {
 
   return (
     <Section title={t("nav.attendance")}>
+      {readOnly && (
+        <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm mb-4">
+          {t("year.viewing_past_readonly")}
+        </div>
+      )}
       <div className="flex flex-wrap gap-2 mb-4">
         <Select value={stage} onValueChange={(v) => { setStage(v); setGrade(GRADES_BY_STAGE[v as keyof typeof GRADES_BY_STAGE][0]); }}>
           <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
@@ -81,9 +105,11 @@ function Page() {
           <SelectContent>{gradesForStage.map((g) => <SelectItem key={g} value={g}>{t(`grade.${g}`)}</SelectItem>)}</SelectContent>
         </Select>
         <Input type="date" className="w-44" value={date} onChange={(e) => setDate(e.target.value)} />
-        <Button size="sm" variant="secondary" onClick={markAllPresent} disabled={!students || students.length === 0}>
-          {t("attendance.mark_all_present")}
-        </Button>
+        {!readOnly && (
+          <Button size="sm" variant="secondary" onClick={markAllPresent} disabled={!students || students.length === 0}>
+            {t("attendance.mark_all_present")}
+          </Button>
+        )}
       </div>
       {(students ?? []).length === 0 ? <EmptyState text={t("common.empty")} /> : (
         <div className="rounded-lg border divide-y">
@@ -95,7 +121,7 @@ function Page() {
                 <div>{p?.full_name}</div>
                 <div className="flex gap-1">
                   {(["present", "late", "absent"] as const).map((st) => (
-                    <Button key={st} size="sm" variant={status === st ? "default" : "outline"} onClick={() => mark(s.user_id, st)}>{t(`attendance.${st}`)}</Button>
+                    <Button key={st} size="sm" variant={status === st ? "default" : "outline"} onClick={() => mark(s.user_id, st)} disabled={readOnly}>{t(`attendance.${st}`)}</Button>
                   ))}
                 </div>
               </div>
