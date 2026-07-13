@@ -9,38 +9,460 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedTeacherRouteImport } from './routes/_authenticated/teacher'
+import { Route as AuthenticatedStudentRouteImport } from './routes/_authenticated/student'
+import { Route as AuthenticatedStaffRouteImport } from './routes/_authenticated/staff'
+import { Route as AuthenticatedTeacherIndexRouteImport } from './routes/_authenticated/teacher.index'
+import { Route as AuthenticatedStudentIndexRouteImport } from './routes/_authenticated/student.index'
+import { Route as AuthenticatedStaffIndexRouteImport } from './routes/_authenticated/staff.index'
+import { Route as AuthenticatedTeacherBanksRouteImport } from './routes/_authenticated/teacher.banks'
+import { Route as AuthenticatedStudentSubjectsRouteImport } from './routes/_authenticated/student.subjects'
+import { Route as AuthenticatedStudentGradesRouteImport } from './routes/_authenticated/student.grades'
+import { Route as AuthenticatedStudentAttendanceRouteImport } from './routes/_authenticated/student.attendance'
+import { Route as AuthenticatedStudentAnnouncementsRouteImport } from './routes/_authenticated/student.announcements'
+import { Route as AuthenticatedStaffYearRouteImport } from './routes/_authenticated/staff.year'
+import { Route as AuthenticatedStaffUsersRouteImport } from './routes/_authenticated/staff.users'
+import { Route as AuthenticatedStaffTeachersRouteImport } from './routes/_authenticated/staff.teachers'
+import { Route as AuthenticatedStaffSubjectsRouteImport } from './routes/_authenticated/staff.subjects'
+import { Route as AuthenticatedStaffSettingsRouteImport } from './routes/_authenticated/staff.settings'
+import { Route as AuthenticatedStaffRequestsRouteImport } from './routes/_authenticated/staff.requests'
+import { Route as AuthenticatedStaffManagersRouteImport } from './routes/_authenticated/staff.managers'
+import { Route as AuthenticatedStaffGradesRouteImport } from './routes/_authenticated/staff.grades'
+import { Route as AuthenticatedStaffExportRouteImport } from './routes/_authenticated/staff.export'
+import { Route as AuthenticatedStaffAttendanceRouteImport } from './routes/_authenticated/staff.attendance'
+import { Route as AuthenticatedStaffAnnouncementsRouteImport } from './routes/_authenticated/staff.announcements'
+import { Route as AuthenticatedStudentSubjectsIndexRouteImport } from './routes/_authenticated/student.subjects.index'
+import { Route as AuthenticatedTeacherSubjectIdRouteImport } from './routes/_authenticated/teacher.subject.$id'
+import { Route as AuthenticatedTeacherHomeworkIdRouteImport } from './routes/_authenticated/teacher.homework.$id'
+import { Route as AuthenticatedStudentSubjectsIdRouteImport } from './routes/_authenticated/student.subjects.$id'
+import { Route as AuthenticatedStudentHomeworkIdRouteImport } from './routes/_authenticated/student.homework.$id'
+import { Route as AuthenticatedStaffYearPromoteRouteImport } from './routes/_authenticated/staff.year.promote'
+import { Route as AuthenticatedStaffYearIdRouteImport } from './routes/_authenticated/staff.year.$id'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedTeacherRoute = AuthenticatedTeacherRouteImport.update({
+  id: '/teacher',
+  path: '/teacher',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedStudentRoute = AuthenticatedStudentRouteImport.update({
+  id: '/student',
+  path: '/student',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedStaffRoute = AuthenticatedStaffRouteImport.update({
+  id: '/staff',
+  path: '/staff',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTeacherIndexRoute =
+  AuthenticatedTeacherIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedTeacherRoute,
+  } as any)
+const AuthenticatedStudentIndexRoute =
+  AuthenticatedStudentIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedStudentRoute,
+  } as any)
+const AuthenticatedStaffIndexRoute = AuthenticatedStaffIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedStaffRoute,
+} as any)
+const AuthenticatedTeacherBanksRoute =
+  AuthenticatedTeacherBanksRouteImport.update({
+    id: '/banks',
+    path: '/banks',
+    getParentRoute: () => AuthenticatedTeacherRoute,
+  } as any)
+const AuthenticatedStudentSubjectsRoute =
+  AuthenticatedStudentSubjectsRouteImport.update({
+    id: '/subjects',
+    path: '/subjects',
+    getParentRoute: () => AuthenticatedStudentRoute,
+  } as any)
+const AuthenticatedStudentGradesRoute =
+  AuthenticatedStudentGradesRouteImport.update({
+    id: '/grades',
+    path: '/grades',
+    getParentRoute: () => AuthenticatedStudentRoute,
+  } as any)
+const AuthenticatedStudentAttendanceRoute =
+  AuthenticatedStudentAttendanceRouteImport.update({
+    id: '/attendance',
+    path: '/attendance',
+    getParentRoute: () => AuthenticatedStudentRoute,
+  } as any)
+const AuthenticatedStudentAnnouncementsRoute =
+  AuthenticatedStudentAnnouncementsRouteImport.update({
+    id: '/announcements',
+    path: '/announcements',
+    getParentRoute: () => AuthenticatedStudentRoute,
+  } as any)
+const AuthenticatedStaffYearRoute = AuthenticatedStaffYearRouteImport.update({
+  id: '/year',
+  path: '/year',
+  getParentRoute: () => AuthenticatedStaffRoute,
+} as any)
+const AuthenticatedStaffUsersRoute = AuthenticatedStaffUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AuthenticatedStaffRoute,
+} as any)
+const AuthenticatedStaffTeachersRoute =
+  AuthenticatedStaffTeachersRouteImport.update({
+    id: '/teachers',
+    path: '/teachers',
+    getParentRoute: () => AuthenticatedStaffRoute,
+  } as any)
+const AuthenticatedStaffSubjectsRoute =
+  AuthenticatedStaffSubjectsRouteImport.update({
+    id: '/subjects',
+    path: '/subjects',
+    getParentRoute: () => AuthenticatedStaffRoute,
+  } as any)
+const AuthenticatedStaffSettingsRoute =
+  AuthenticatedStaffSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedStaffRoute,
+  } as any)
+const AuthenticatedStaffRequestsRoute =
+  AuthenticatedStaffRequestsRouteImport.update({
+    id: '/requests',
+    path: '/requests',
+    getParentRoute: () => AuthenticatedStaffRoute,
+  } as any)
+const AuthenticatedStaffManagersRoute =
+  AuthenticatedStaffManagersRouteImport.update({
+    id: '/managers',
+    path: '/managers',
+    getParentRoute: () => AuthenticatedStaffRoute,
+  } as any)
+const AuthenticatedStaffGradesRoute =
+  AuthenticatedStaffGradesRouteImport.update({
+    id: '/grades',
+    path: '/grades',
+    getParentRoute: () => AuthenticatedStaffRoute,
+  } as any)
+const AuthenticatedStaffExportRoute =
+  AuthenticatedStaffExportRouteImport.update({
+    id: '/export',
+    path: '/export',
+    getParentRoute: () => AuthenticatedStaffRoute,
+  } as any)
+const AuthenticatedStaffAttendanceRoute =
+  AuthenticatedStaffAttendanceRouteImport.update({
+    id: '/attendance',
+    path: '/attendance',
+    getParentRoute: () => AuthenticatedStaffRoute,
+  } as any)
+const AuthenticatedStaffAnnouncementsRoute =
+  AuthenticatedStaffAnnouncementsRouteImport.update({
+    id: '/announcements',
+    path: '/announcements',
+    getParentRoute: () => AuthenticatedStaffRoute,
+  } as any)
+const AuthenticatedStudentSubjectsIndexRoute =
+  AuthenticatedStudentSubjectsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedStudentSubjectsRoute,
+  } as any)
+const AuthenticatedTeacherSubjectIdRoute =
+  AuthenticatedTeacherSubjectIdRouteImport.update({
+    id: '/subject/$id',
+    path: '/subject/$id',
+    getParentRoute: () => AuthenticatedTeacherRoute,
+  } as any)
+const AuthenticatedTeacherHomeworkIdRoute =
+  AuthenticatedTeacherHomeworkIdRouteImport.update({
+    id: '/homework/$id',
+    path: '/homework/$id',
+    getParentRoute: () => AuthenticatedTeacherRoute,
+  } as any)
+const AuthenticatedStudentSubjectsIdRoute =
+  AuthenticatedStudentSubjectsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedStudentSubjectsRoute,
+  } as any)
+const AuthenticatedStudentHomeworkIdRoute =
+  AuthenticatedStudentHomeworkIdRouteImport.update({
+    id: '/homework/$id',
+    path: '/homework/$id',
+    getParentRoute: () => AuthenticatedStudentRoute,
+  } as any)
+const AuthenticatedStaffYearPromoteRoute =
+  AuthenticatedStaffYearPromoteRouteImport.update({
+    id: '/promote',
+    path: '/promote',
+    getParentRoute: () => AuthenticatedStaffYearRoute,
+  } as any)
+const AuthenticatedStaffYearIdRoute =
+  AuthenticatedStaffYearIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedStaffYearRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/staff': typeof AuthenticatedStaffRouteWithChildren
+  '/student': typeof AuthenticatedStudentRouteWithChildren
+  '/teacher': typeof AuthenticatedTeacherRouteWithChildren
+  '/staff/announcements': typeof AuthenticatedStaffAnnouncementsRoute
+  '/staff/attendance': typeof AuthenticatedStaffAttendanceRoute
+  '/staff/export': typeof AuthenticatedStaffExportRoute
+  '/staff/grades': typeof AuthenticatedStaffGradesRoute
+  '/staff/managers': typeof AuthenticatedStaffManagersRoute
+  '/staff/requests': typeof AuthenticatedStaffRequestsRoute
+  '/staff/settings': typeof AuthenticatedStaffSettingsRoute
+  '/staff/subjects': typeof AuthenticatedStaffSubjectsRoute
+  '/staff/teachers': typeof AuthenticatedStaffTeachersRoute
+  '/staff/users': typeof AuthenticatedStaffUsersRoute
+  '/staff/year': typeof AuthenticatedStaffYearRouteWithChildren
+  '/student/announcements': typeof AuthenticatedStudentAnnouncementsRoute
+  '/student/attendance': typeof AuthenticatedStudentAttendanceRoute
+  '/student/grades': typeof AuthenticatedStudentGradesRoute
+  '/student/subjects': typeof AuthenticatedStudentSubjectsRouteWithChildren
+  '/teacher/banks': typeof AuthenticatedTeacherBanksRoute
+  '/staff/': typeof AuthenticatedStaffIndexRoute
+  '/student/': typeof AuthenticatedStudentIndexRoute
+  '/teacher/': typeof AuthenticatedTeacherIndexRoute
+  '/staff/year/$id': typeof AuthenticatedStaffYearIdRoute
+  '/staff/year/promote': typeof AuthenticatedStaffYearPromoteRoute
+  '/student/homework/$id': typeof AuthenticatedStudentHomeworkIdRoute
+  '/student/subjects/$id': typeof AuthenticatedStudentSubjectsIdRoute
+  '/teacher/homework/$id': typeof AuthenticatedTeacherHomeworkIdRoute
+  '/teacher/subject/$id': typeof AuthenticatedTeacherSubjectIdRoute
+  '/student/subjects/': typeof AuthenticatedStudentSubjectsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/staff/announcements': typeof AuthenticatedStaffAnnouncementsRoute
+  '/staff/attendance': typeof AuthenticatedStaffAttendanceRoute
+  '/staff/export': typeof AuthenticatedStaffExportRoute
+  '/staff/grades': typeof AuthenticatedStaffGradesRoute
+  '/staff/managers': typeof AuthenticatedStaffManagersRoute
+  '/staff/requests': typeof AuthenticatedStaffRequestsRoute
+  '/staff/settings': typeof AuthenticatedStaffSettingsRoute
+  '/staff/subjects': typeof AuthenticatedStaffSubjectsRoute
+  '/staff/teachers': typeof AuthenticatedStaffTeachersRoute
+  '/staff/users': typeof AuthenticatedStaffUsersRoute
+  '/staff/year': typeof AuthenticatedStaffYearRouteWithChildren
+  '/student/announcements': typeof AuthenticatedStudentAnnouncementsRoute
+  '/student/attendance': typeof AuthenticatedStudentAttendanceRoute
+  '/student/grades': typeof AuthenticatedStudentGradesRoute
+  '/teacher/banks': typeof AuthenticatedTeacherBanksRoute
+  '/staff': typeof AuthenticatedStaffIndexRoute
+  '/student': typeof AuthenticatedStudentIndexRoute
+  '/teacher': typeof AuthenticatedTeacherIndexRoute
+  '/staff/year/$id': typeof AuthenticatedStaffYearIdRoute
+  '/staff/year/promote': typeof AuthenticatedStaffYearPromoteRoute
+  '/student/homework/$id': typeof AuthenticatedStudentHomeworkIdRoute
+  '/student/subjects/$id': typeof AuthenticatedStudentSubjectsIdRoute
+  '/teacher/homework/$id': typeof AuthenticatedTeacherHomeworkIdRoute
+  '/teacher/subject/$id': typeof AuthenticatedTeacherSubjectIdRoute
+  '/student/subjects': typeof AuthenticatedStudentSubjectsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/_authenticated/staff': typeof AuthenticatedStaffRouteWithChildren
+  '/_authenticated/student': typeof AuthenticatedStudentRouteWithChildren
+  '/_authenticated/teacher': typeof AuthenticatedTeacherRouteWithChildren
+  '/_authenticated/staff/announcements': typeof AuthenticatedStaffAnnouncementsRoute
+  '/_authenticated/staff/attendance': typeof AuthenticatedStaffAttendanceRoute
+  '/_authenticated/staff/export': typeof AuthenticatedStaffExportRoute
+  '/_authenticated/staff/grades': typeof AuthenticatedStaffGradesRoute
+  '/_authenticated/staff/managers': typeof AuthenticatedStaffManagersRoute
+  '/_authenticated/staff/requests': typeof AuthenticatedStaffRequestsRoute
+  '/_authenticated/staff/settings': typeof AuthenticatedStaffSettingsRoute
+  '/_authenticated/staff/subjects': typeof AuthenticatedStaffSubjectsRoute
+  '/_authenticated/staff/teachers': typeof AuthenticatedStaffTeachersRoute
+  '/_authenticated/staff/users': typeof AuthenticatedStaffUsersRoute
+  '/_authenticated/staff/year': typeof AuthenticatedStaffYearRouteWithChildren
+  '/_authenticated/student/announcements': typeof AuthenticatedStudentAnnouncementsRoute
+  '/_authenticated/student/attendance': typeof AuthenticatedStudentAttendanceRoute
+  '/_authenticated/student/grades': typeof AuthenticatedStudentGradesRoute
+  '/_authenticated/student/subjects': typeof AuthenticatedStudentSubjectsRouteWithChildren
+  '/_authenticated/teacher/banks': typeof AuthenticatedTeacherBanksRoute
+  '/_authenticated/staff/': typeof AuthenticatedStaffIndexRoute
+  '/_authenticated/student/': typeof AuthenticatedStudentIndexRoute
+  '/_authenticated/teacher/': typeof AuthenticatedTeacherIndexRoute
+  '/_authenticated/staff/year/$id': typeof AuthenticatedStaffYearIdRoute
+  '/_authenticated/staff/year/promote': typeof AuthenticatedStaffYearPromoteRoute
+  '/_authenticated/student/homework/$id': typeof AuthenticatedStudentHomeworkIdRoute
+  '/_authenticated/student/subjects/$id': typeof AuthenticatedStudentSubjectsIdRoute
+  '/_authenticated/teacher/homework/$id': typeof AuthenticatedTeacherHomeworkIdRoute
+  '/_authenticated/teacher/subject/$id': typeof AuthenticatedTeacherSubjectIdRoute
+  '/_authenticated/student/subjects/': typeof AuthenticatedStudentSubjectsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/sitemap.xml'
+    | '/staff'
+    | '/student'
+    | '/teacher'
+    | '/staff/announcements'
+    | '/staff/attendance'
+    | '/staff/export'
+    | '/staff/grades'
+    | '/staff/managers'
+    | '/staff/requests'
+    | '/staff/settings'
+    | '/staff/subjects'
+    | '/staff/teachers'
+    | '/staff/users'
+    | '/staff/year'
+    | '/student/announcements'
+    | '/student/attendance'
+    | '/student/grades'
+    | '/student/subjects'
+    | '/teacher/banks'
+    | '/staff/'
+    | '/student/'
+    | '/teacher/'
+    | '/staff/year/$id'
+    | '/staff/year/promote'
+    | '/student/homework/$id'
+    | '/student/subjects/$id'
+    | '/teacher/homework/$id'
+    | '/teacher/subject/$id'
+    | '/student/subjects/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/sitemap.xml'
+    | '/staff/announcements'
+    | '/staff/attendance'
+    | '/staff/export'
+    | '/staff/grades'
+    | '/staff/managers'
+    | '/staff/requests'
+    | '/staff/settings'
+    | '/staff/subjects'
+    | '/staff/teachers'
+    | '/staff/users'
+    | '/staff/year'
+    | '/student/announcements'
+    | '/student/attendance'
+    | '/student/grades'
+    | '/teacher/banks'
+    | '/staff'
+    | '/student'
+    | '/teacher'
+    | '/staff/year/$id'
+    | '/staff/year/promote'
+    | '/student/homework/$id'
+    | '/student/subjects/$id'
+    | '/teacher/homework/$id'
+    | '/teacher/subject/$id'
+    | '/student/subjects'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/sitemap.xml'
+    | '/_authenticated/staff'
+    | '/_authenticated/student'
+    | '/_authenticated/teacher'
+    | '/_authenticated/staff/announcements'
+    | '/_authenticated/staff/attendance'
+    | '/_authenticated/staff/export'
+    | '/_authenticated/staff/grades'
+    | '/_authenticated/staff/managers'
+    | '/_authenticated/staff/requests'
+    | '/_authenticated/staff/settings'
+    | '/_authenticated/staff/subjects'
+    | '/_authenticated/staff/teachers'
+    | '/_authenticated/staff/users'
+    | '/_authenticated/staff/year'
+    | '/_authenticated/student/announcements'
+    | '/_authenticated/student/attendance'
+    | '/_authenticated/student/grades'
+    | '/_authenticated/student/subjects'
+    | '/_authenticated/teacher/banks'
+    | '/_authenticated/staff/'
+    | '/_authenticated/student/'
+    | '/_authenticated/teacher/'
+    | '/_authenticated/staff/year/$id'
+    | '/_authenticated/staff/year/promote'
+    | '/_authenticated/student/homework/$id'
+    | '/_authenticated/student/subjects/$id'
+    | '/_authenticated/teacher/homework/$id'
+    | '/_authenticated/teacher/subject/$id'
+    | '/_authenticated/student/subjects/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +470,339 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/teacher': {
+      id: '/_authenticated/teacher'
+      path: '/teacher'
+      fullPath: '/teacher'
+      preLoaderRoute: typeof AuthenticatedTeacherRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/student': {
+      id: '/_authenticated/student'
+      path: '/student'
+      fullPath: '/student'
+      preLoaderRoute: typeof AuthenticatedStudentRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/staff': {
+      id: '/_authenticated/staff'
+      path: '/staff'
+      fullPath: '/staff'
+      preLoaderRoute: typeof AuthenticatedStaffRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/teacher/': {
+      id: '/_authenticated/teacher/'
+      path: '/'
+      fullPath: '/teacher/'
+      preLoaderRoute: typeof AuthenticatedTeacherIndexRouteImport
+      parentRoute: typeof AuthenticatedTeacherRoute
+    }
+    '/_authenticated/student/': {
+      id: '/_authenticated/student/'
+      path: '/'
+      fullPath: '/student/'
+      preLoaderRoute: typeof AuthenticatedStudentIndexRouteImport
+      parentRoute: typeof AuthenticatedStudentRoute
+    }
+    '/_authenticated/staff/': {
+      id: '/_authenticated/staff/'
+      path: '/'
+      fullPath: '/staff/'
+      preLoaderRoute: typeof AuthenticatedStaffIndexRouteImport
+      parentRoute: typeof AuthenticatedStaffRoute
+    }
+    '/_authenticated/teacher/banks': {
+      id: '/_authenticated/teacher/banks'
+      path: '/banks'
+      fullPath: '/teacher/banks'
+      preLoaderRoute: typeof AuthenticatedTeacherBanksRouteImport
+      parentRoute: typeof AuthenticatedTeacherRoute
+    }
+    '/_authenticated/student/subjects': {
+      id: '/_authenticated/student/subjects'
+      path: '/subjects'
+      fullPath: '/student/subjects'
+      preLoaderRoute: typeof AuthenticatedStudentSubjectsRouteImport
+      parentRoute: typeof AuthenticatedStudentRoute
+    }
+    '/_authenticated/student/grades': {
+      id: '/_authenticated/student/grades'
+      path: '/grades'
+      fullPath: '/student/grades'
+      preLoaderRoute: typeof AuthenticatedStudentGradesRouteImport
+      parentRoute: typeof AuthenticatedStudentRoute
+    }
+    '/_authenticated/student/attendance': {
+      id: '/_authenticated/student/attendance'
+      path: '/attendance'
+      fullPath: '/student/attendance'
+      preLoaderRoute: typeof AuthenticatedStudentAttendanceRouteImport
+      parentRoute: typeof AuthenticatedStudentRoute
+    }
+    '/_authenticated/student/announcements': {
+      id: '/_authenticated/student/announcements'
+      path: '/announcements'
+      fullPath: '/student/announcements'
+      preLoaderRoute: typeof AuthenticatedStudentAnnouncementsRouteImport
+      parentRoute: typeof AuthenticatedStudentRoute
+    }
+    '/_authenticated/staff/year': {
+      id: '/_authenticated/staff/year'
+      path: '/year'
+      fullPath: '/staff/year'
+      preLoaderRoute: typeof AuthenticatedStaffYearRouteImport
+      parentRoute: typeof AuthenticatedStaffRoute
+    }
+    '/_authenticated/staff/users': {
+      id: '/_authenticated/staff/users'
+      path: '/users'
+      fullPath: '/staff/users'
+      preLoaderRoute: typeof AuthenticatedStaffUsersRouteImport
+      parentRoute: typeof AuthenticatedStaffRoute
+    }
+    '/_authenticated/staff/teachers': {
+      id: '/_authenticated/staff/teachers'
+      path: '/teachers'
+      fullPath: '/staff/teachers'
+      preLoaderRoute: typeof AuthenticatedStaffTeachersRouteImport
+      parentRoute: typeof AuthenticatedStaffRoute
+    }
+    '/_authenticated/staff/subjects': {
+      id: '/_authenticated/staff/subjects'
+      path: '/subjects'
+      fullPath: '/staff/subjects'
+      preLoaderRoute: typeof AuthenticatedStaffSubjectsRouteImport
+      parentRoute: typeof AuthenticatedStaffRoute
+    }
+    '/_authenticated/staff/settings': {
+      id: '/_authenticated/staff/settings'
+      path: '/settings'
+      fullPath: '/staff/settings'
+      preLoaderRoute: typeof AuthenticatedStaffSettingsRouteImport
+      parentRoute: typeof AuthenticatedStaffRoute
+    }
+    '/_authenticated/staff/requests': {
+      id: '/_authenticated/staff/requests'
+      path: '/requests'
+      fullPath: '/staff/requests'
+      preLoaderRoute: typeof AuthenticatedStaffRequestsRouteImport
+      parentRoute: typeof AuthenticatedStaffRoute
+    }
+    '/_authenticated/staff/managers': {
+      id: '/_authenticated/staff/managers'
+      path: '/managers'
+      fullPath: '/staff/managers'
+      preLoaderRoute: typeof AuthenticatedStaffManagersRouteImport
+      parentRoute: typeof AuthenticatedStaffRoute
+    }
+    '/_authenticated/staff/grades': {
+      id: '/_authenticated/staff/grades'
+      path: '/grades'
+      fullPath: '/staff/grades'
+      preLoaderRoute: typeof AuthenticatedStaffGradesRouteImport
+      parentRoute: typeof AuthenticatedStaffRoute
+    }
+    '/_authenticated/staff/export': {
+      id: '/_authenticated/staff/export'
+      path: '/export'
+      fullPath: '/staff/export'
+      preLoaderRoute: typeof AuthenticatedStaffExportRouteImport
+      parentRoute: typeof AuthenticatedStaffRoute
+    }
+    '/_authenticated/staff/attendance': {
+      id: '/_authenticated/staff/attendance'
+      path: '/attendance'
+      fullPath: '/staff/attendance'
+      preLoaderRoute: typeof AuthenticatedStaffAttendanceRouteImport
+      parentRoute: typeof AuthenticatedStaffRoute
+    }
+    '/_authenticated/staff/announcements': {
+      id: '/_authenticated/staff/announcements'
+      path: '/announcements'
+      fullPath: '/staff/announcements'
+      preLoaderRoute: typeof AuthenticatedStaffAnnouncementsRouteImport
+      parentRoute: typeof AuthenticatedStaffRoute
+    }
+    '/_authenticated/student/subjects/': {
+      id: '/_authenticated/student/subjects/'
+      path: '/'
+      fullPath: '/student/subjects/'
+      preLoaderRoute: typeof AuthenticatedStudentSubjectsIndexRouteImport
+      parentRoute: typeof AuthenticatedStudentSubjectsRoute
+    }
+    '/_authenticated/teacher/subject/$id': {
+      id: '/_authenticated/teacher/subject/$id'
+      path: '/subject/$id'
+      fullPath: '/teacher/subject/$id'
+      preLoaderRoute: typeof AuthenticatedTeacherSubjectIdRouteImport
+      parentRoute: typeof AuthenticatedTeacherRoute
+    }
+    '/_authenticated/teacher/homework/$id': {
+      id: '/_authenticated/teacher/homework/$id'
+      path: '/homework/$id'
+      fullPath: '/teacher/homework/$id'
+      preLoaderRoute: typeof AuthenticatedTeacherHomeworkIdRouteImport
+      parentRoute: typeof AuthenticatedTeacherRoute
+    }
+    '/_authenticated/student/subjects/$id': {
+      id: '/_authenticated/student/subjects/$id'
+      path: '/$id'
+      fullPath: '/student/subjects/$id'
+      preLoaderRoute: typeof AuthenticatedStudentSubjectsIdRouteImport
+      parentRoute: typeof AuthenticatedStudentSubjectsRoute
+    }
+    '/_authenticated/student/homework/$id': {
+      id: '/_authenticated/student/homework/$id'
+      path: '/homework/$id'
+      fullPath: '/student/homework/$id'
+      preLoaderRoute: typeof AuthenticatedStudentHomeworkIdRouteImport
+      parentRoute: typeof AuthenticatedStudentRoute
+    }
+    '/_authenticated/staff/year/promote': {
+      id: '/_authenticated/staff/year/promote'
+      path: '/promote'
+      fullPath: '/staff/year/promote'
+      preLoaderRoute: typeof AuthenticatedStaffYearPromoteRouteImport
+      parentRoute: typeof AuthenticatedStaffYearRoute
+    }
+    '/_authenticated/staff/year/$id': {
+      id: '/_authenticated/staff/year/$id'
+      path: '/$id'
+      fullPath: '/staff/year/$id'
+      preLoaderRoute: typeof AuthenticatedStaffYearIdRouteImport
+      parentRoute: typeof AuthenticatedStaffYearRoute
+    }
   }
 }
 
+interface AuthenticatedStaffYearRouteChildren {
+  AuthenticatedStaffYearIdRoute: typeof AuthenticatedStaffYearIdRoute
+  AuthenticatedStaffYearPromoteRoute: typeof AuthenticatedStaffYearPromoteRoute
+}
+
+const AuthenticatedStaffYearRouteChildren: AuthenticatedStaffYearRouteChildren =
+  {
+    AuthenticatedStaffYearIdRoute: AuthenticatedStaffYearIdRoute,
+    AuthenticatedStaffYearPromoteRoute: AuthenticatedStaffYearPromoteRoute,
+  }
+
+const AuthenticatedStaffYearRouteWithChildren =
+  AuthenticatedStaffYearRoute._addFileChildren(
+    AuthenticatedStaffYearRouteChildren,
+  )
+
+interface AuthenticatedStaffRouteChildren {
+  AuthenticatedStaffAnnouncementsRoute: typeof AuthenticatedStaffAnnouncementsRoute
+  AuthenticatedStaffAttendanceRoute: typeof AuthenticatedStaffAttendanceRoute
+  AuthenticatedStaffExportRoute: typeof AuthenticatedStaffExportRoute
+  AuthenticatedStaffGradesRoute: typeof AuthenticatedStaffGradesRoute
+  AuthenticatedStaffManagersRoute: typeof AuthenticatedStaffManagersRoute
+  AuthenticatedStaffRequestsRoute: typeof AuthenticatedStaffRequestsRoute
+  AuthenticatedStaffSettingsRoute: typeof AuthenticatedStaffSettingsRoute
+  AuthenticatedStaffSubjectsRoute: typeof AuthenticatedStaffSubjectsRoute
+  AuthenticatedStaffTeachersRoute: typeof AuthenticatedStaffTeachersRoute
+  AuthenticatedStaffUsersRoute: typeof AuthenticatedStaffUsersRoute
+  AuthenticatedStaffYearRoute: typeof AuthenticatedStaffYearRouteWithChildren
+  AuthenticatedStaffIndexRoute: typeof AuthenticatedStaffIndexRoute
+}
+
+const AuthenticatedStaffRouteChildren: AuthenticatedStaffRouteChildren = {
+  AuthenticatedStaffAnnouncementsRoute: AuthenticatedStaffAnnouncementsRoute,
+  AuthenticatedStaffAttendanceRoute: AuthenticatedStaffAttendanceRoute,
+  AuthenticatedStaffExportRoute: AuthenticatedStaffExportRoute,
+  AuthenticatedStaffGradesRoute: AuthenticatedStaffGradesRoute,
+  AuthenticatedStaffManagersRoute: AuthenticatedStaffManagersRoute,
+  AuthenticatedStaffRequestsRoute: AuthenticatedStaffRequestsRoute,
+  AuthenticatedStaffSettingsRoute: AuthenticatedStaffSettingsRoute,
+  AuthenticatedStaffSubjectsRoute: AuthenticatedStaffSubjectsRoute,
+  AuthenticatedStaffTeachersRoute: AuthenticatedStaffTeachersRoute,
+  AuthenticatedStaffUsersRoute: AuthenticatedStaffUsersRoute,
+  AuthenticatedStaffYearRoute: AuthenticatedStaffYearRouteWithChildren,
+  AuthenticatedStaffIndexRoute: AuthenticatedStaffIndexRoute,
+}
+
+const AuthenticatedStaffRouteWithChildren =
+  AuthenticatedStaffRoute._addFileChildren(AuthenticatedStaffRouteChildren)
+
+interface AuthenticatedStudentSubjectsRouteChildren {
+  AuthenticatedStudentSubjectsIdRoute: typeof AuthenticatedStudentSubjectsIdRoute
+  AuthenticatedStudentSubjectsIndexRoute: typeof AuthenticatedStudentSubjectsIndexRoute
+}
+
+const AuthenticatedStudentSubjectsRouteChildren: AuthenticatedStudentSubjectsRouteChildren =
+  {
+    AuthenticatedStudentSubjectsIdRoute: AuthenticatedStudentSubjectsIdRoute,
+    AuthenticatedStudentSubjectsIndexRoute:
+      AuthenticatedStudentSubjectsIndexRoute,
+  }
+
+const AuthenticatedStudentSubjectsRouteWithChildren =
+  AuthenticatedStudentSubjectsRoute._addFileChildren(
+    AuthenticatedStudentSubjectsRouteChildren,
+  )
+
+interface AuthenticatedStudentRouteChildren {
+  AuthenticatedStudentAnnouncementsRoute: typeof AuthenticatedStudentAnnouncementsRoute
+  AuthenticatedStudentAttendanceRoute: typeof AuthenticatedStudentAttendanceRoute
+  AuthenticatedStudentGradesRoute: typeof AuthenticatedStudentGradesRoute
+  AuthenticatedStudentSubjectsRoute: typeof AuthenticatedStudentSubjectsRouteWithChildren
+  AuthenticatedStudentIndexRoute: typeof AuthenticatedStudentIndexRoute
+  AuthenticatedStudentHomeworkIdRoute: typeof AuthenticatedStudentHomeworkIdRoute
+}
+
+const AuthenticatedStudentRouteChildren: AuthenticatedStudentRouteChildren = {
+  AuthenticatedStudentAnnouncementsRoute:
+    AuthenticatedStudentAnnouncementsRoute,
+  AuthenticatedStudentAttendanceRoute: AuthenticatedStudentAttendanceRoute,
+  AuthenticatedStudentGradesRoute: AuthenticatedStudentGradesRoute,
+  AuthenticatedStudentSubjectsRoute:
+    AuthenticatedStudentSubjectsRouteWithChildren,
+  AuthenticatedStudentIndexRoute: AuthenticatedStudentIndexRoute,
+  AuthenticatedStudentHomeworkIdRoute: AuthenticatedStudentHomeworkIdRoute,
+}
+
+const AuthenticatedStudentRouteWithChildren =
+  AuthenticatedStudentRoute._addFileChildren(AuthenticatedStudentRouteChildren)
+
+interface AuthenticatedTeacherRouteChildren {
+  AuthenticatedTeacherBanksRoute: typeof AuthenticatedTeacherBanksRoute
+  AuthenticatedTeacherIndexRoute: typeof AuthenticatedTeacherIndexRoute
+  AuthenticatedTeacherHomeworkIdRoute: typeof AuthenticatedTeacherHomeworkIdRoute
+  AuthenticatedTeacherSubjectIdRoute: typeof AuthenticatedTeacherSubjectIdRoute
+}
+
+const AuthenticatedTeacherRouteChildren: AuthenticatedTeacherRouteChildren = {
+  AuthenticatedTeacherBanksRoute: AuthenticatedTeacherBanksRoute,
+  AuthenticatedTeacherIndexRoute: AuthenticatedTeacherIndexRoute,
+  AuthenticatedTeacherHomeworkIdRoute: AuthenticatedTeacherHomeworkIdRoute,
+  AuthenticatedTeacherSubjectIdRoute: AuthenticatedTeacherSubjectIdRoute,
+}
+
+const AuthenticatedTeacherRouteWithChildren =
+  AuthenticatedTeacherRoute._addFileChildren(AuthenticatedTeacherRouteChildren)
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedStaffRoute: typeof AuthenticatedStaffRouteWithChildren
+  AuthenticatedStudentRoute: typeof AuthenticatedStudentRouteWithChildren
+  AuthenticatedTeacherRoute: typeof AuthenticatedTeacherRouteWithChildren
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedStaffRoute: AuthenticatedStaffRouteWithChildren,
+  AuthenticatedStudentRoute: AuthenticatedStudentRouteWithChildren,
+  AuthenticatedTeacherRoute: AuthenticatedTeacherRouteWithChildren,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
