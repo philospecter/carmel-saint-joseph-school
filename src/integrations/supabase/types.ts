@@ -14,8 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      academic_years: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          id: string
+          is_current: boolean
+          label: string
+          started_at: string
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          is_current?: boolean
+          label: string
+          started_at?: string
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          is_current?: boolean
+          label?: string
+          started_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
+          academic_year_id: string
           author_id: string
           body: string
           created_at: string
@@ -26,6 +57,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          academic_year_id?: string
           author_id: string
           body: string
           created_at?: string
@@ -36,6 +68,7 @@ export type Database = {
           title: string
         }
         Update: {
+          academic_year_id?: string
           author_id?: string
           body?: string
           created_at?: string
@@ -47,6 +80,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "announcements_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "academic_years"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "announcements_teacher_assignment_id_fkey"
             columns: ["teacher_assignment_id"]
             isOneToOne: false
@@ -57,6 +97,7 @@ export type Database = {
       }
       attendance: {
         Row: {
+          academic_year_id: string
           created_at: string
           date: string
           id: string
@@ -65,6 +106,7 @@ export type Database = {
           student_id: string
         }
         Insert: {
+          academic_year_id?: string
           created_at?: string
           date: string
           id?: string
@@ -73,6 +115,7 @@ export type Database = {
           student_id: string
         }
         Update: {
+          academic_year_id?: string
           created_at?: string
           date?: string
           id?: string
@@ -80,10 +123,19 @@ export type Database = {
           status?: Database["public"]["Enums"]["attendance_status"]
           student_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "attendance_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "academic_years"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       grades: {
         Row: {
+          academic_year_id: string
           committed_at: string
           entered_by: string | null
           id: string
@@ -95,6 +147,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          academic_year_id?: string
           committed_at?: string
           entered_by?: string | null
           id?: string
@@ -106,6 +159,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          academic_year_id?: string
           committed_at?: string
           entered_by?: string | null
           id?: string
@@ -118,6 +172,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "grades_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "academic_years"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "grades_subject_id_fkey"
             columns: ["subject_id"]
             isOneToOne: false
@@ -128,6 +189,7 @@ export type Database = {
       }
       homework: {
         Row: {
+          academic_year_id: string
           attachment_path: string | null
           auto_lock: boolean
           bank_id: string | null
@@ -142,6 +204,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          academic_year_id?: string
           attachment_path?: string | null
           auto_lock?: boolean
           bank_id?: string | null
@@ -156,6 +219,7 @@ export type Database = {
           title: string
         }
         Update: {
+          academic_year_id?: string
           attachment_path?: string | null
           auto_lock?: boolean
           bank_id?: string | null
@@ -170,6 +234,13 @@ export type Database = {
           title?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "homework_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "academic_years"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "homework_bank_id_fkey"
             columns: ["bank_id"]
@@ -269,6 +340,7 @@ export type Database = {
       }
       homework_submissions: {
         Row: {
+          academic_year_id: string
           auto_score: number | null
           created_at: string
           final_score: number | null
@@ -280,6 +352,7 @@ export type Database = {
           submitted_at: string | null
         }
         Insert: {
+          academic_year_id?: string
           auto_score?: number | null
           created_at?: string
           final_score?: number | null
@@ -291,6 +364,7 @@ export type Database = {
           submitted_at?: string | null
         }
         Update: {
+          academic_year_id?: string
           auto_score?: number | null
           created_at?: string
           final_score?: number | null
@@ -302,6 +376,13 @@ export type Database = {
           submitted_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "homework_submissions_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "academic_years"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "homework_submissions_homework_id_fkey"
             columns: ["homework_id"]
@@ -475,24 +556,37 @@ export type Database = {
       }
       student_enrollments: {
         Row: {
+          academic_year_id: string
           grade_level: Database["public"]["Enums"]["grade_level"]
           id: string
+          is_graduated: boolean
           stage_group: Database["public"]["Enums"]["stage_group"]
           user_id: string
         }
         Insert: {
+          academic_year_id?: string
           grade_level: Database["public"]["Enums"]["grade_level"]
           id?: string
+          is_graduated?: boolean
           stage_group: Database["public"]["Enums"]["stage_group"]
           user_id: string
         }
         Update: {
+          academic_year_id?: string
           grade_level?: Database["public"]["Enums"]["grade_level"]
           id?: string
+          is_graduated?: boolean
           stage_group?: Database["public"]["Enums"]["stage_group"]
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "student_enrollments_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "academic_years"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "student_enrollments_user_id_profiles_fkey"
             columns: ["user_id"]
@@ -528,6 +622,7 @@ export type Database = {
       }
       teacher_assignments: {
         Row: {
+          academic_year_id: string
           assigned_by: string | null
           created_at: string
           id: string
@@ -535,6 +630,7 @@ export type Database = {
           teacher_id: string
         }
         Insert: {
+          academic_year_id?: string
           assigned_by?: string | null
           created_at?: string
           id?: string
@@ -542,6 +638,7 @@ export type Database = {
           teacher_id: string
         }
         Update: {
+          academic_year_id?: string
           assigned_by?: string | null
           created_at?: string
           id?: string
@@ -549,6 +646,13 @@ export type Database = {
           teacher_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "teacher_assignments_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "academic_years"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "teacher_assignments_subject_id_fkey"
             columns: ["subject_id"]
@@ -606,6 +710,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      current_academic_year_id: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -620,6 +725,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      promote_students: {
+        Args: { _promotions: Json; _repeats: string[] }
+        Returns: undefined
+      }
+      start_new_academic_year: { Args: { _label: string }; Returns: string }
       student_of_stage_manager: {
         Args: { _sm: string; _student: string }
         Returns: boolean
