@@ -607,9 +607,25 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["stage_group"]
       }
+      subject_reference_counts: {
+        Args: { _subject: string }
+        Returns: {
+          grades: number
+          homework: number
+          teachers: number
+        }[]
+      }
       subject_stage: {
         Args: { _subject: string }
         Returns: Database["public"]["Enums"]["stage_group"]
+      }
+      subject_uuid: {
+        Args: {
+          _grade: Database["public"]["Enums"]["grade_level"]
+          _name: string
+          _stage: Database["public"]["Enums"]["stage_group"]
+        }
+        Returns: string
       }
       teacher_owns_assignment: {
         Args: { _assignment: string; _user_id: string }
