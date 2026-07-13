@@ -111,3 +111,108 @@ export const promoteStudents = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// Preview promotion roster for the CURRENT (still-open) year — used for
+// the reordered rollover flow where promotion is decided BEFORE the new
+// year is created.
+export const previewCurrentYearRoster = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<PromotionRosterEntry[]> => {
+    const { supabase, userId } = context;
+    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" as never });
+    if (!isAdmin) throw new Error("Forbidden");
+
+    const { data: cur } = await (supabase as any)
+      .from("academic_years")
+      .select("id")
+      .eq("is_current", true)
+      .maybeSingle();
+    if (!cur) return [];
+
+    const { data: rows, error } = await (supabase as any)
+      .from("student_enrollments")
+      .select("user_id, stage_group, grade_level, profiles:user_id(full_name)")
+      .eq("academic_year_id", cur.id)
+      .eq("is_graduated", false);
+    if (error) throw new Error(error.message);
+
+    const grouped = new Map<string, PromotionRosterEntry>();
+    for (const r of (rows ?? []) as Array<{
+      user_id: string;
+      stage_group: string;
+      grade_level: string;
+      profiles: { full_name: string } | null;
+    }>) {
+      const key = `${r.stage_group}|${r.grade_level}`;
+      if (!grouped.has(key)) {
+        grouped.set(key, { stage_group: r.stage_group, grade_level: r.grade_level, students: [] });
+      }
+      grouped.get(key)!.students.push({ user_id: r.user_id, full_name: r.profiles?.full_name ?? "—" });
+    }
+    return Array.from(grouped.values());
+  });
+
+// Atomic: close current year + create new year + copy teacher assignments +
+// promote/repeat students, in one transaction. Password re-auth happens client-side.
+export const startYearAndPromote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      label: string;
+      promotions: { from_stage: string; from_grade: string; to_stage: string; to_grade: string }[];
+      repeats: string[];
+    }) => input,
+  )
+  .handler(async ({ data, context }): Promise<{ new_year_id: string }> => {
+    const { supabase, userId } = context;
+    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" as never });
+    if (!isAdmin) throw new Error("Forbidden");
+    const label = data.label.trim();
+    if (!label) throw new Error("Label is required");
+    const { data: newId, error } = await (supabase as any).rpc("start_year_and_promote", {
+      _label: label,
+      _promotions: data.promotions,
+      _repeats: data.repeats,
+    });
+    if (error) throw new Error(error.message);
+    return { new_year_id: newId as string };
+  });
+
+export const deleteAcademicYear = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { year_id: string }) => input)
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    const { supabase, userId } = context;
+    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" as never });
+    if (!isAdmin) throw new Error("Forbidden");
+    const { error } = await (supabase as any).rpc("delete_academic_year", { _year: data.year_id });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const renameAcademicYear = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { year_id: string; label: string }) => input)
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    const { supabase, userId } = context;
+    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" as never });
+    if (!isAdmin) throw new Error("Forbidden");
+    const { error } = await (supabase as any).rpc("rename_academic_year", {
+      _year: data.year_id,
+      _label: data.label,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const setCurrentAcademicYear = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { year_id: string }) => input)
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    const { supabase, userId } = context;
+    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" as never });
+    if (!isAdmin) throw new Error("Forbidden");
+    const { error } = await (supabase as any).rpc("set_current_academic_year", { _year: data.year_id });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
