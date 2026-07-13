@@ -71,6 +71,14 @@ function Page() {
           </>
         )}
       </div>
+      <div className="mt-4 flex gap-2 flex-wrap">
+        <Button asChild variant="outline" size="sm">
+          <Link to="/staff/grades" search={{ year: id }}>{t("year.open_grades")}</Link>
+        </Button>
+        <Button asChild variant="outline" size="sm">
+          <Link to="/staff/attendance" search={{ year: id }}>{t("year.open_attendance")}</Link>
+        </Button>
+      </div>
       <div className="mt-4 text-xs text-muted-foreground">
         <Badge variant="secondary">{t("year.viewing_past_readonly")}</Badge>
       </div>
