@@ -1,0 +1,1 @@
+ALTER TABLE public.homework_submissions ADD CONSTRAINT homework_submissions_student_homework_unique UNIQUE (homework_id, student_id);
