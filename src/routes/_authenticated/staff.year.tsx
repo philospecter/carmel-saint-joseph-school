@@ -83,12 +83,23 @@ function Page() {
     <Section
       title={t("year.title")}
       action={
-        <Button onClick={() => { setLabel(defaultLabel); setOpen(true); }}>
-          <GraduationCap className="w-4 h-4 mr-2" />
-          {t("year.start_new")}
-        </Button>
+        <div className="flex items-center gap-2">
+          {isAdmin && (pendingCount ?? 0) > 0 && (
+            <Button variant="outline" asChild>
+              <Link to="/staff/year/promote">
+                <Users className="w-4 h-4 mr-2" />
+                Promote students ({pendingCount})
+              </Link>
+            </Button>
+          )}
+          <Button onClick={() => { setLabel(defaultLabel); setOpen(true); }}>
+            <GraduationCap className="w-4 h-4 mr-2" />
+            {t("year.start_new")}
+          </Button>
+        </div>
       }
     >
+
       {!years || years.length === 0 ? (
         <EmptyState text={t("common.empty")} />
       ) : (
