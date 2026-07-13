@@ -1,13 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Section, EmptyState } from "@/components/portal/PortalShell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
 import { useMe } from "@/hooks/use-me";
-import { getYearCounts } from "@/lib/academic-years.functions";
 import { ChevronLeft } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/staff/year/$id")({ component: Page });
@@ -23,13 +21,28 @@ function Page() {
     queryFn: async () =>
       (await (supabase as any).from("academic_years").select("id,label,started_at,closed_at,is_current").eq("id", id).maybeSingle()).data,
   });
-  const countsFn = useServerFn(getYearCounts);
   const { data: counts } = useQuery({
     queryKey: ["year-counts", id],
     enabled: isAdmin,
-    queryFn: () => countsFn({ data: { year_id: id } }),
+    queryFn: async () => {
+      const [e, g, a, ta, hw, an] = await Promise.all([
+        (supabase as any).from("student_enrollments").select("id", { count: "exact", head: true }).eq("academic_year_id", id),
+        (supabase as any).from("grades").select("id", { count: "exact", head: true }).eq("academic_year_id", id),
+        (supabase as any).from("attendance").select("id", { count: "exact", head: true }).eq("academic_year_id", id),
+        (supabase as any).from("teacher_assignments").select("id", { count: "exact", head: true }).eq("academic_year_id", id),
+        (supabase as any).from("homework").select("id", { count: "exact", head: true }).eq("academic_year_id", id),
+        (supabase as any).from("announcements").select("id", { count: "exact", head: true }).eq("academic_year_id", id),
+      ]);
+      return {
+        enrollments: e.count ?? 0,
+        grades: g.count ?? 0,
+        attendance: a.count ?? 0,
+        teacher_assignments: ta.count ?? 0,
+        homework: hw.count ?? 0,
+        announcements: an.count ?? 0,
+      };
+    },
   });
-
 
   if (!isAdmin) return <div className="p-8">{t("common.empty")}</div>;
   if (!year) return <EmptyState text={t("common.loading")} />;
