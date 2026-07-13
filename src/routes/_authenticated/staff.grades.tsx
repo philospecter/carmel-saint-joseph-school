@@ -358,7 +358,7 @@ function GradeRow({
         )}
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        {!unlocked && existing ? (
+        {(!unlocked && existing) || (readOnly && existing) ? (
           <>
             {existing.score < rowMax / 2 && (
               <Badge variant="destructive" className="text-xs">{t("grades.failed")}</Badge>
@@ -369,10 +369,14 @@ function GradeRow({
             >
               {existing.score}/{rowMax}
             </Badge>
-            <Button size="sm" variant="outline" onClick={() => setUnlocked(true)}>
-              <Pencil className="h-3 w-3 mr-1" />{t("grades.edit")}
-            </Button>
+            {!readOnly && (
+              <Button size="sm" variant="outline" onClick={() => setUnlocked(true)}>
+                <Pencil className="h-3 w-3 mr-1" />{t("grades.edit")}
+              </Button>
+            )}
           </>
+        ) : readOnly ? (
+          <span className="text-sm text-muted-foreground">—</span>
         ) : (
           <>
             <Input
