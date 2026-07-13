@@ -711,6 +711,7 @@ export type Database = {
     }
     Functions: {
       current_academic_year_id: { Args: never; Returns: string }
+      delete_academic_year: { Args: { _year: string }; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -739,6 +740,11 @@ export type Database = {
         Args: { _promotions: Json; _repeats: string[] }
         Returns: undefined
       }
+      rename_academic_year: {
+        Args: { _label: string; _year: string }
+        Returns: undefined
+      }
+      set_current_academic_year: { Args: { _year: string }; Returns: undefined }
       set_grade_cell_max: {
         Args: {
           _month: number
@@ -749,6 +755,10 @@ export type Database = {
         Returns: number
       }
       start_new_academic_year: { Args: { _label: string }; Returns: string }
+      start_year_and_promote: {
+        Args: { _label: string; _promotions: Json; _repeats: string[] }
+        Returns: string
+      }
       student_of_stage_manager: {
         Args: { _sm: string; _student: string }
         Returns: boolean
