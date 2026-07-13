@@ -153,7 +153,13 @@ function Page() {
 
   return (
     <Section title={t("nav.grades")}>
+      {readOnly && (
+        <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm mb-4">
+          {t("year.viewing_past_readonly")}
+        </div>
+      )}
       <div className="flex flex-wrap gap-2 mb-4 items-end">
+
         <Select value={stage} onValueChange={(v) => { setStage(v); setGrade(GRADES_BY_STAGE[v as keyof typeof GRADES_BY_STAGE][0]); setSubject(""); }}>
           <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
           <SelectContent>{stages.map((s) => <SelectItem key={s} value={s}>{t(`stage.${s}`)}</SelectItem>)}</SelectContent>
