@@ -18,7 +18,12 @@ import { formatSupabaseError } from "@/lib/errors";
 import { listTermMonths } from "@/lib/settings.functions";
 import { listGradesForCell, getGradeCellMax, clearGradeCell, type GradeCellRow } from "@/lib/grades.functions";
 
-export const Route = createFileRoute("/_authenticated/staff/grades")({ component: Page });
+export const Route = createFileRoute("/_authenticated/staff/grades")({
+  validateSearch: (search: Record<string, unknown>): { year?: string } => ({
+    year: typeof search.year === "string" && search.year ? search.year : undefined,
+  }),
+  component: Page,
+});
 
 const MONTH_LABEL = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 type Term = "term_1" | "term_2" | "midyear" | "final";
@@ -43,6 +48,8 @@ function Page() {
   const { t } = useI18n();
   const { data: me } = useMe();
   const qc = useQueryClient();
+  const { year: yearId } = Route.useSearch();
+  const readOnly = !!yearId;
   const isAdmin = !!me?.roles.includes("admin");
   const stages = isAdmin ? [...STAGE_GROUPS] : me?.stages ?? [];
   const [stage, setStage] = useState<string>(stages[0] ?? "primary_1_2");
@@ -82,31 +89,34 @@ function Page() {
   });
 
   const { data: students } = useQuery({
-    queryKey: ["stud", stage, grade],
-    queryFn: async () =>
-      (await supabase
+    queryKey: ["stud", stage, grade, yearId ?? ""],
+    queryFn: async () => {
+      let q = supabase
         .from("student_enrollments")
         .select("user_id, profiles!student_enrollments_user_id_profiles_fkey(full_name)")
         .eq("stage_group", stage as never)
-        .eq("grade_level", grade as never)).data ?? [],
+        .eq("grade_level", grade as never);
+      if (yearId) q = q.eq("academic_year_id", yearId as never);
+      return (await q).data ?? [];
+    },
   });
 
   const cellReady = !!subject && (term === "midyear" || term === "final" || month !== null);
 
   const cellMaxFn = useServerFn(getGradeCellMax);
-  const maxKey = ["grade-cell-max", subject, term, month] as const;
+  const maxKey = ["grade-cell-max", subject, term, month, yearId ?? ""] as const;
   const { data: cellMaxData } = useQuery({
     queryKey: maxKey,
     enabled: cellReady,
-    queryFn: () => cellMaxFn({ data: { subject_id: subject, term, month } }),
+    queryFn: () => cellMaxFn({ data: { subject_id: subject, term, month, year_id: yearId ?? null } }),
   });
 
   const gradesFn = useServerFn(listGradesForCell);
-  const gradesKey = ["grades-cell", subject, term, month] as const;
+  const gradesKey = ["grades-cell", subject, term, month, yearId ?? ""] as const;
   const { data: cellGrades } = useQuery({
     queryKey: gradesKey,
     enabled: cellReady,
-    queryFn: () => gradesFn({ data: { subject_id: subject, term, month } }),
+    queryFn: () => gradesFn({ data: { subject_id: subject, term, month, year_id: yearId ?? null } }),
   });
   const gradeMap = new Map<string, GradeCellRow>((cellGrades ?? []).map((g) => [g.student_id, g]));
 
@@ -143,7 +153,13 @@ function Page() {
 
   return (
     <Section title={t("nav.grades")}>
+      {readOnly && (
+        <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm mb-4">
+          {t("year.viewing_past_readonly")}
+        </div>
+      )}
       <div className="flex flex-wrap gap-2 mb-4 items-end">
+
         <Select value={stage} onValueChange={(v) => { setStage(v); setGrade(GRADES_BY_STAGE[v as keyof typeof GRADES_BY_STAGE][0]); setSubject(""); }}>
           <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
           <SelectContent>{stages.map((s) => <SelectItem key={s} value={s}>{t(`stage.${s}`)}</SelectItem>)}</SelectContent>
@@ -186,7 +202,7 @@ function Page() {
               readOnly={locked}
               onChange={(e) => setDraftMax(e.target.value)}
             />
-            {locked && (
+            {locked && !readOnly && (
               <Button
                 size="icon"
                 variant="outline"
@@ -228,6 +244,7 @@ function Page() {
                 sessionMax={sessionMax}
                 enteredById={me?.userId ?? ""}
                 showAudit={isAdmin}
+                readOnly={readOnly}
                 onSaved={() => {
                   qc.invalidateQueries({ queryKey: gradesKey });
                   qc.invalidateQueries({ queryKey: maxKey });
@@ -266,7 +283,7 @@ function Page() {
 
 
 function GradeRow({
-  studentId, studentName, existing, subjectId, term, month, sessionMax, enteredById, showAudit, onSaved,
+  studentId, studentName, existing, subjectId, term, month, sessionMax, enteredById, showAudit, readOnly, onSaved,
 }: {
   studentId: string;
   studentName: string;
@@ -277,11 +294,12 @@ function GradeRow({
   sessionMax: number;
   enteredById: string;
   showAudit: boolean;
+  readOnly?: boolean;
   onSaved: () => void;
 }) {
   const { t } = useI18n();
   const hasSaved = existing !== null;
-  const [unlocked, setUnlocked] = useState(!hasSaved);
+  const [unlocked, setUnlocked] = useState(!hasSaved && !readOnly);
   const [value, setValue] = useState<string>(existing ? String(existing.score) : "");
 
   useEffect(() => {
@@ -340,7 +358,7 @@ function GradeRow({
         )}
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        {!unlocked && existing ? (
+        {(!unlocked && existing) || (readOnly && existing) ? (
           <>
             {existing.score < rowMax / 2 && (
               <Badge variant="destructive" className="text-xs">{t("grades.failed")}</Badge>
@@ -351,10 +369,14 @@ function GradeRow({
             >
               {existing.score}/{rowMax}
             </Badge>
-            <Button size="sm" variant="outline" onClick={() => setUnlocked(true)}>
-              <Pencil className="h-3 w-3 mr-1" />{t("grades.edit")}
-            </Button>
+            {!readOnly && (
+              <Button size="sm" variant="outline" onClick={() => setUnlocked(true)}>
+                <Pencil className="h-3 w-3 mr-1" />{t("grades.edit")}
+              </Button>
+            )}
           </>
+        ) : readOnly ? (
+          <span className="text-sm text-muted-foreground">—</span>
         ) : (
           <>
             <Input

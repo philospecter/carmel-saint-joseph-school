@@ -21,7 +21,7 @@ export type GradeCellRow = {
  */
 export const listGradesForCell = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { subject_id: string; term: string; month: number | null }) => input)
+  .inputValidator((input: { subject_id: string; term: string; month: number | null; year_id?: string | null }) => input)
   .handler(async ({ data, context }): Promise<GradeCellRow[]> => {
     let q = (context.supabase as any)
       .from("grades")
@@ -30,6 +30,7 @@ export const listGradesForCell = createServerFn({ method: "POST" })
       .eq("term", data.term);
     if (data.month === null) q = q.is("month", null);
     else q = q.eq("month", data.month);
+    if (data.year_id) q = q.eq("academic_year_id", data.year_id);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     const grades = (rows ?? []) as Array<Omit<GradeCellRow, "entered_by_name">>;
@@ -46,14 +47,9 @@ export const listGradesForCell = createServerFn({ method: "POST" })
     return grades.map((g) => ({ ...g, entered_by_name: g.entered_by ? names.get(g.entered_by) ?? null : null }));
   });
 
-/**
- * Returns the max_score already in use for a (subject, term, month) cell in the
- * current academic year, or null if the cell is empty. All rows in a cell share
- * the same max_score by construction (writes go through this UI or the rescale RPC).
- */
 export const getGradeCellMax = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { subject_id: string; term: string; month: number | null }) => input)
+  .inputValidator((input: { subject_id: string; term: string; month: number | null; year_id?: string | null }) => input)
   .handler(async ({ data, context }): Promise<{ max_score: number | null; row_count: number }> => {
     let q = (context.supabase as any)
       .from("grades")
@@ -62,6 +58,7 @@ export const getGradeCellMax = createServerFn({ method: "POST" })
       .eq("term", data.term);
     if (data.month === null) q = q.is("month", null);
     else q = q.eq("month", data.month);
+    if (data.year_id) q = q.eq("academic_year_id", data.year_id);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     const arr = (rows ?? []) as Array<{ max_score: number }>;
