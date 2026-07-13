@@ -725,6 +725,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      pending_promotion_count: { Args: never; Returns: number }
+      preview_promotion_roster: {
+        Args: never
+        Returns: {
+          full_name: string
+          grade_level: Database["public"]["Enums"]["grade_level"]
+          stage_group: Database["public"]["Enums"]["stage_group"]
+          user_id: string
+        }[]
+      }
       promote_students: {
         Args: { _promotions: Json; _repeats: string[] }
         Returns: undefined
@@ -771,6 +781,7 @@ export type Database = {
         Args: { _assignment: string; _user_id: string }
         Returns: boolean
       }
+      year_scoped_counts: { Args: { _year: string }; Returns: Json }
     }
     Enums: {
       announcement_scope: "stage" | "subject"

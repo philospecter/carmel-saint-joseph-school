@@ -9,11 +9,11 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { toast } from "sonner";
-import { AlertTriangle, GraduationCap } from "lucide-react";
+import { AlertTriangle, GraduationCap, Users } from "lucide-react";
 import { useMe } from "@/hooks/use-me";
 import { supabase } from "@/integrations/supabase/client";
 import { formatSupabaseError } from "@/lib/errors";
-import { listAcademicYears, startNewAcademicYear } from "@/lib/academic-years.functions";
+import { listAcademicYears, startNewAcademicYear, pendingPromotionCount } from "@/lib/academic-years.functions";
 import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/staff/year")({ component: Page });
@@ -26,7 +26,14 @@ function Page() {
   const navigate = useNavigate();
   const listFn = useServerFn(listAcademicYears);
   const startFn = useServerFn(startNewAcademicYear);
+  const pendingFn = useServerFn(pendingPromotionCount);
   const { data: years } = useQuery({ queryKey: ["academic-years"], queryFn: () => listFn() });
+  const { data: pendingCount } = useQuery({
+    queryKey: ["pending-promotion-count"],
+    enabled: isAdmin,
+    queryFn: () => pendingFn(),
+  });
+
 
   const [open, setOpen] = useState(false);
   const current = years?.find((y) => y.is_current);
@@ -76,12 +83,23 @@ function Page() {
     <Section
       title={t("year.title")}
       action={
-        <Button onClick={() => { setLabel(defaultLabel); setOpen(true); }}>
-          <GraduationCap className="w-4 h-4 mr-2" />
-          {t("year.start_new")}
-        </Button>
+        <div className="flex items-center gap-2">
+          {isAdmin && (pendingCount ?? 0) > 0 && (
+            <Button variant="outline" asChild>
+              <Link to="/staff/year/promote">
+                <Users className="w-4 h-4 mr-2" />
+                Promote students ({pendingCount})
+              </Link>
+            </Button>
+          )}
+          <Button onClick={() => { setLabel(defaultLabel); setOpen(true); }}>
+            <GraduationCap className="w-4 h-4 mr-2" />
+            {t("year.start_new")}
+          </Button>
+        </div>
       }
     >
+
       {!years || years.length === 0 ? (
         <EmptyState text={t("common.empty")} />
       ) : (
