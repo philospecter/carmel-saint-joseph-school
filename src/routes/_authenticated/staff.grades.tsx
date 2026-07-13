@@ -178,7 +178,7 @@ function Page() {
         <EmptyState text="Pick a subject." />
       ) : showMonth && month === null ? (
         <EmptyState text={t("settings.no_months")} />
-      ) : effectiveMax === null ? (
+      ) : effectiveMax === null && !(Number(pendingMax) > 0) ? (
         // Cell empty — prompt for session max before roster appears
         <div className="rounded-lg border p-6 space-y-3 max-w-md">
           <div className="font-serif text-lg">{t("grades.set_session_max")}</div>
@@ -206,6 +206,7 @@ function Page() {
             </Button>
           </div>
         </div>
+
       ) : (students ?? []).length === 0 ? (
         <EmptyState text={t("common.empty")} />
       ) : (
