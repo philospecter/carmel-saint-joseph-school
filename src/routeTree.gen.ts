@@ -24,7 +24,6 @@ import { Route as AuthenticatedStudentSubjectsRouteImport } from './routes/_auth
 import { Route as AuthenticatedStudentGradesRouteImport } from './routes/_authenticated/student.grades'
 import { Route as AuthenticatedStudentAttendanceRouteImport } from './routes/_authenticated/student.attendance'
 import { Route as AuthenticatedStudentAnnouncementsRouteImport } from './routes/_authenticated/student.announcements'
-import { Route as AuthenticatedStaffYearRouteImport } from './routes/_authenticated/staff.year'
 import { Route as AuthenticatedStaffUsersRouteImport } from './routes/_authenticated/staff.users'
 import { Route as AuthenticatedStaffTeachersRouteImport } from './routes/_authenticated/staff.teachers'
 import { Route as AuthenticatedStaffSubjectsRouteImport } from './routes/_authenticated/staff.subjects'
@@ -36,6 +35,7 @@ import { Route as AuthenticatedStaffExportRouteImport } from './routes/_authenti
 import { Route as AuthenticatedStaffAttendanceRouteImport } from './routes/_authenticated/staff.attendance'
 import { Route as AuthenticatedStaffAnnouncementsRouteImport } from './routes/_authenticated/staff.announcements'
 import { Route as AuthenticatedStudentSubjectsIndexRouteImport } from './routes/_authenticated/student.subjects.index'
+import { Route as AuthenticatedStaffYearIndexRouteImport } from './routes/_authenticated/staff.year.index'
 import { Route as AuthenticatedTeacherSubjectIdRouteImport } from './routes/_authenticated/teacher.subject.$id'
 import { Route as AuthenticatedTeacherHomeworkIdRouteImport } from './routes/_authenticated/teacher.homework.$id'
 import { Route as AuthenticatedStudentSubjectsIdRouteImport } from './routes/_authenticated/student.subjects.$id'
@@ -124,11 +124,6 @@ const AuthenticatedStudentAnnouncementsRoute =
     path: '/announcements',
     getParentRoute: () => AuthenticatedStudentRoute,
   } as any)
-const AuthenticatedStaffYearRoute = AuthenticatedStaffYearRouteImport.update({
-  id: '/year',
-  path: '/year',
-  getParentRoute: () => AuthenticatedStaffRoute,
-} as any)
 const AuthenticatedStaffUsersRoute = AuthenticatedStaffUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -194,6 +189,12 @@ const AuthenticatedStudentSubjectsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedStudentSubjectsRoute,
   } as any)
+const AuthenticatedStaffYearIndexRoute =
+  AuthenticatedStaffYearIndexRouteImport.update({
+    id: '/year/',
+    path: '/year/',
+    getParentRoute: () => AuthenticatedStaffRoute,
+  } as any)
 const AuthenticatedTeacherSubjectIdRoute =
   AuthenticatedTeacherSubjectIdRouteImport.update({
     id: '/subject/$id',
@@ -220,15 +221,15 @@ const AuthenticatedStudentHomeworkIdRoute =
   } as any)
 const AuthenticatedStaffYearPromoteRoute =
   AuthenticatedStaffYearPromoteRouteImport.update({
-    id: '/promote',
-    path: '/promote',
-    getParentRoute: () => AuthenticatedStaffYearRoute,
+    id: '/year/promote',
+    path: '/year/promote',
+    getParentRoute: () => AuthenticatedStaffRoute,
   } as any)
 const AuthenticatedStaffYearIdRoute =
   AuthenticatedStaffYearIdRouteImport.update({
-    id: '/$id',
-    path: '/$id',
-    getParentRoute: () => AuthenticatedStaffYearRoute,
+    id: '/year/$id',
+    path: '/year/$id',
+    getParentRoute: () => AuthenticatedStaffRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -248,7 +249,6 @@ export interface FileRoutesByFullPath {
   '/staff/subjects': typeof AuthenticatedStaffSubjectsRoute
   '/staff/teachers': typeof AuthenticatedStaffTeachersRoute
   '/staff/users': typeof AuthenticatedStaffUsersRoute
-  '/staff/year': typeof AuthenticatedStaffYearRouteWithChildren
   '/student/announcements': typeof AuthenticatedStudentAnnouncementsRoute
   '/student/attendance': typeof AuthenticatedStudentAttendanceRoute
   '/student/grades': typeof AuthenticatedStudentGradesRoute
@@ -263,6 +263,7 @@ export interface FileRoutesByFullPath {
   '/student/subjects/$id': typeof AuthenticatedStudentSubjectsIdRoute
   '/teacher/homework/$id': typeof AuthenticatedTeacherHomeworkIdRoute
   '/teacher/subject/$id': typeof AuthenticatedTeacherSubjectIdRoute
+  '/staff/year/': typeof AuthenticatedStaffYearIndexRoute
   '/student/subjects/': typeof AuthenticatedStudentSubjectsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -279,7 +280,6 @@ export interface FileRoutesByTo {
   '/staff/subjects': typeof AuthenticatedStaffSubjectsRoute
   '/staff/teachers': typeof AuthenticatedStaffTeachersRoute
   '/staff/users': typeof AuthenticatedStaffUsersRoute
-  '/staff/year': typeof AuthenticatedStaffYearRouteWithChildren
   '/student/announcements': typeof AuthenticatedStudentAnnouncementsRoute
   '/student/attendance': typeof AuthenticatedStudentAttendanceRoute
   '/student/grades': typeof AuthenticatedStudentGradesRoute
@@ -293,6 +293,7 @@ export interface FileRoutesByTo {
   '/student/subjects/$id': typeof AuthenticatedStudentSubjectsIdRoute
   '/teacher/homework/$id': typeof AuthenticatedTeacherHomeworkIdRoute
   '/teacher/subject/$id': typeof AuthenticatedTeacherSubjectIdRoute
+  '/staff/year': typeof AuthenticatedStaffYearIndexRoute
   '/student/subjects': typeof AuthenticatedStudentSubjectsIndexRoute
 }
 export interface FileRoutesById {
@@ -314,7 +315,6 @@ export interface FileRoutesById {
   '/_authenticated/staff/subjects': typeof AuthenticatedStaffSubjectsRoute
   '/_authenticated/staff/teachers': typeof AuthenticatedStaffTeachersRoute
   '/_authenticated/staff/users': typeof AuthenticatedStaffUsersRoute
-  '/_authenticated/staff/year': typeof AuthenticatedStaffYearRouteWithChildren
   '/_authenticated/student/announcements': typeof AuthenticatedStudentAnnouncementsRoute
   '/_authenticated/student/attendance': typeof AuthenticatedStudentAttendanceRoute
   '/_authenticated/student/grades': typeof AuthenticatedStudentGradesRoute
@@ -329,6 +329,7 @@ export interface FileRoutesById {
   '/_authenticated/student/subjects/$id': typeof AuthenticatedStudentSubjectsIdRoute
   '/_authenticated/teacher/homework/$id': typeof AuthenticatedTeacherHomeworkIdRoute
   '/_authenticated/teacher/subject/$id': typeof AuthenticatedTeacherSubjectIdRoute
+  '/_authenticated/staff/year/': typeof AuthenticatedStaffYearIndexRoute
   '/_authenticated/student/subjects/': typeof AuthenticatedStudentSubjectsIndexRoute
 }
 export interface FileRouteTypes {
@@ -350,7 +351,6 @@ export interface FileRouteTypes {
     | '/staff/subjects'
     | '/staff/teachers'
     | '/staff/users'
-    | '/staff/year'
     | '/student/announcements'
     | '/student/attendance'
     | '/student/grades'
@@ -365,6 +365,7 @@ export interface FileRouteTypes {
     | '/student/subjects/$id'
     | '/teacher/homework/$id'
     | '/teacher/subject/$id'
+    | '/staff/year/'
     | '/student/subjects/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -381,7 +382,6 @@ export interface FileRouteTypes {
     | '/staff/subjects'
     | '/staff/teachers'
     | '/staff/users'
-    | '/staff/year'
     | '/student/announcements'
     | '/student/attendance'
     | '/student/grades'
@@ -395,6 +395,7 @@ export interface FileRouteTypes {
     | '/student/subjects/$id'
     | '/teacher/homework/$id'
     | '/teacher/subject/$id'
+    | '/staff/year'
     | '/student/subjects'
   id:
     | '__root__'
@@ -415,7 +416,6 @@ export interface FileRouteTypes {
     | '/_authenticated/staff/subjects'
     | '/_authenticated/staff/teachers'
     | '/_authenticated/staff/users'
-    | '/_authenticated/staff/year'
     | '/_authenticated/student/announcements'
     | '/_authenticated/student/attendance'
     | '/_authenticated/student/grades'
@@ -430,6 +430,7 @@ export interface FileRouteTypes {
     | '/_authenticated/student/subjects/$id'
     | '/_authenticated/teacher/homework/$id'
     | '/_authenticated/teacher/subject/$id'
+    | '/_authenticated/staff/year/'
     | '/_authenticated/student/subjects/'
   fileRoutesById: FileRoutesById
 }
@@ -547,13 +548,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudentAnnouncementsRouteImport
       parentRoute: typeof AuthenticatedStudentRoute
     }
-    '/_authenticated/staff/year': {
-      id: '/_authenticated/staff/year'
-      path: '/year'
-      fullPath: '/staff/year'
-      preLoaderRoute: typeof AuthenticatedStaffYearRouteImport
-      parentRoute: typeof AuthenticatedStaffRoute
-    }
     '/_authenticated/staff/users': {
       id: '/_authenticated/staff/users'
       path: '/users'
@@ -631,6 +625,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudentSubjectsIndexRouteImport
       parentRoute: typeof AuthenticatedStudentSubjectsRoute
     }
+    '/_authenticated/staff/year/': {
+      id: '/_authenticated/staff/year/'
+      path: '/year'
+      fullPath: '/staff/year/'
+      preLoaderRoute: typeof AuthenticatedStaffYearIndexRouteImport
+      parentRoute: typeof AuthenticatedStaffRoute
+    }
     '/_authenticated/teacher/subject/$id': {
       id: '/_authenticated/teacher/subject/$id'
       path: '/subject/$id'
@@ -661,36 +662,20 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/staff/year/promote': {
       id: '/_authenticated/staff/year/promote'
-      path: '/promote'
+      path: '/year/promote'
       fullPath: '/staff/year/promote'
       preLoaderRoute: typeof AuthenticatedStaffYearPromoteRouteImport
-      parentRoute: typeof AuthenticatedStaffYearRoute
+      parentRoute: typeof AuthenticatedStaffRoute
     }
     '/_authenticated/staff/year/$id': {
       id: '/_authenticated/staff/year/$id'
-      path: '/$id'
+      path: '/year/$id'
       fullPath: '/staff/year/$id'
       preLoaderRoute: typeof AuthenticatedStaffYearIdRouteImport
-      parentRoute: typeof AuthenticatedStaffYearRoute
+      parentRoute: typeof AuthenticatedStaffRoute
     }
   }
 }
-
-interface AuthenticatedStaffYearRouteChildren {
-  AuthenticatedStaffYearIdRoute: typeof AuthenticatedStaffYearIdRoute
-  AuthenticatedStaffYearPromoteRoute: typeof AuthenticatedStaffYearPromoteRoute
-}
-
-const AuthenticatedStaffYearRouteChildren: AuthenticatedStaffYearRouteChildren =
-  {
-    AuthenticatedStaffYearIdRoute: AuthenticatedStaffYearIdRoute,
-    AuthenticatedStaffYearPromoteRoute: AuthenticatedStaffYearPromoteRoute,
-  }
-
-const AuthenticatedStaffYearRouteWithChildren =
-  AuthenticatedStaffYearRoute._addFileChildren(
-    AuthenticatedStaffYearRouteChildren,
-  )
 
 interface AuthenticatedStaffRouteChildren {
   AuthenticatedStaffAnnouncementsRoute: typeof AuthenticatedStaffAnnouncementsRoute
@@ -703,8 +688,10 @@ interface AuthenticatedStaffRouteChildren {
   AuthenticatedStaffSubjectsRoute: typeof AuthenticatedStaffSubjectsRoute
   AuthenticatedStaffTeachersRoute: typeof AuthenticatedStaffTeachersRoute
   AuthenticatedStaffUsersRoute: typeof AuthenticatedStaffUsersRoute
-  AuthenticatedStaffYearRoute: typeof AuthenticatedStaffYearRouteWithChildren
   AuthenticatedStaffIndexRoute: typeof AuthenticatedStaffIndexRoute
+  AuthenticatedStaffYearIdRoute: typeof AuthenticatedStaffYearIdRoute
+  AuthenticatedStaffYearPromoteRoute: typeof AuthenticatedStaffYearPromoteRoute
+  AuthenticatedStaffYearIndexRoute: typeof AuthenticatedStaffYearIndexRoute
 }
 
 const AuthenticatedStaffRouteChildren: AuthenticatedStaffRouteChildren = {
@@ -718,8 +705,10 @@ const AuthenticatedStaffRouteChildren: AuthenticatedStaffRouteChildren = {
   AuthenticatedStaffSubjectsRoute: AuthenticatedStaffSubjectsRoute,
   AuthenticatedStaffTeachersRoute: AuthenticatedStaffTeachersRoute,
   AuthenticatedStaffUsersRoute: AuthenticatedStaffUsersRoute,
-  AuthenticatedStaffYearRoute: AuthenticatedStaffYearRouteWithChildren,
   AuthenticatedStaffIndexRoute: AuthenticatedStaffIndexRoute,
+  AuthenticatedStaffYearIdRoute: AuthenticatedStaffYearIdRoute,
+  AuthenticatedStaffYearPromoteRoute: AuthenticatedStaffYearPromoteRoute,
+  AuthenticatedStaffYearIndexRoute: AuthenticatedStaffYearIndexRoute,
 }
 
 const AuthenticatedStaffRouteWithChildren =

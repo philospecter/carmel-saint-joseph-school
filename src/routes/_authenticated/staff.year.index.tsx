@@ -23,7 +23,7 @@ import {
 } from "@/lib/academic-years.functions";
 import { useI18n } from "@/lib/i18n";
 
-export const Route = createFileRoute("/_authenticated/staff/year")({ component: Page });
+export const Route = createFileRoute("/_authenticated/staff/year/")({ component: Page });
 
 function fmt(tpl: string, vars: Record<string, string | number>) {
   return tpl.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? ""));
