@@ -8,6 +8,7 @@ import { Section, EmptyState } from "@/components/portal/PortalShell";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { listTermMonths } from "@/lib/settings.functions";
+import { useCurrentYearId } from "@/lib/rosters";
 
 export const Route = createFileRoute("/_authenticated/student/grades")({ component: Page });
 
