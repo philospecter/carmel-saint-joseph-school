@@ -138,10 +138,13 @@ export const getStaffDashboardStats = createServerFn({ method: "GET" })
         updated_at: r.updated_at,
       }));
 
-    // Sessions pending: subjects with a teacher_assignment in current year but zero grade rows.
-    const { data: assigns } = await sb
+    // Sessions pending: subjects with a teacher_assignment in current year but zero grade rows this year.
+    let assignsQ = sb
       .from("teacher_assignments")
       .select("subject_id, subjects!inner(id, name, stage_group, grade_level)");
+    if (currentYearId) assignsQ = assignsQ.eq("academic_year_id", currentYearId);
+    const { data: assigns } = await assignsQ;
+
     const assignSubjects = ((assigns ?? []) as Array<{ subject_id: string; subjects: any }>).map((a) => a.subjects);
     const scopedAssignSubjects = assignSubjects.filter(
       (s) => isAdmin || (scopeStages && scopeStages.includes(s.stage_group)),
