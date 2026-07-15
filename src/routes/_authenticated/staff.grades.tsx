@@ -17,6 +17,7 @@ import { Pencil, Lock } from "lucide-react";
 import { formatSupabaseError } from "@/lib/errors";
 import { listTermMonths } from "@/lib/settings.functions";
 import { listGradesForCell, getGradeCellMax, clearGradeCell, type GradeCellRow } from "@/lib/grades.functions";
+import { useCurrentYearId, resolveRosterYear } from "@/lib/rosters";
 
 export const Route = createFileRoute("/_authenticated/staff/grades")({
   validateSearch: (search: Record<string, unknown>): { year?: string } => ({
@@ -88,15 +89,19 @@ function Page() {
         .order("name")).data ?? [],
   });
 
+  const { data: currentYearId } = useCurrentYearId();
+  const effectiveYearId = resolveRosterYear(yearId, currentYearId);
   const { data: students } = useQuery({
-    queryKey: ["stud", stage, grade, yearId ?? ""],
+    queryKey: ["stud", stage, grade, effectiveYearId ?? ""],
+    enabled: !!effectiveYearId,
     queryFn: async () => {
-      let q = supabase
+      const q = supabase
         .from("student_enrollments")
         .select("user_id, profiles!student_enrollments_user_id_profiles_fkey(full_name)")
         .eq("stage_group", stage as never)
-        .eq("grade_level", grade as never);
-      if (yearId) q = q.eq("academic_year_id", yearId as never);
+        .eq("grade_level", grade as never)
+        .eq("is_graduated", false)
+        .eq("academic_year_id", effectiveYearId as never);
       return (await q).data ?? [];
     },
   });

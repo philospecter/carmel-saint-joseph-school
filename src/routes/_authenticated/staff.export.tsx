@@ -10,6 +10,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatSupabaseError } from "@/lib/errors";
+import { useCurrentYearId } from "@/lib/rosters";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -60,14 +61,26 @@ function downloadPDF(name: string, title: string, rows: Row[]) {
 function Page() {
   const { t } = useI18n();
   const { data: me } = useMe();
+  const { data: currentYearId } = useCurrentYearId();
   const isAdmin = !!me?.roles.includes("admin");
   const stages = isAdmin ? [...STAGE_GROUPS] : me?.stages ?? [];
   const [stage, setStage] = useState<string>(stages[0] ?? "primary_1_2");
   const [grade, setGrade] = useState<string>(GRADES_BY_STAGE[(stages[0] ?? "primary_1_2") as keyof typeof GRADES_BY_STAGE][0]);
 
+  async function fetchActiveIds(): Promise<string[]> {
+    if (!currentYearId) { toast.info("No current academic year"); return []; }
+    const { data: enrolls } = await supabase
+      .from("student_enrollments")
+      .select("user_id")
+      .eq("stage_group", stage as never)
+      .eq("grade_level", grade as never)
+      .eq("is_graduated", false)
+      .eq("academic_year_id", currentYearId as never);
+    return (enrolls ?? []).map((e) => e.user_id);
+  }
+
   async function fetchAttendance(): Promise<Row[]> {
-    const { data: enrolls } = await supabase.from("student_enrollments").select("user_id").eq("stage_group", stage as never).eq("grade_level", grade as never);
-    const ids = (enrolls ?? []).map((e) => e.user_id);
+    const ids = await fetchActiveIds();
     if (ids.length === 0) { toast.info("No students"); return []; }
     const [{ data: profs }, { data: att }] = await Promise.all([
       supabase.from("profiles").select("id, full_name, national_id").in("id", ids),
@@ -83,8 +96,7 @@ function Page() {
   }
 
   async function fetchGrades(): Promise<Row[]> {
-    const { data: enrolls } = await supabase.from("student_enrollments").select("user_id").eq("stage_group", stage as never).eq("grade_level", grade as never);
-    const ids = (enrolls ?? []).map((e) => e.user_id);
+    const ids = await fetchActiveIds();
     if (ids.length === 0) { toast.info("No students"); return []; }
     const [{ data: profs }, { data: subs }, { data: grades }] = await Promise.all([
       supabase.from("profiles").select("id, full_name, national_id").in("id", ids),
