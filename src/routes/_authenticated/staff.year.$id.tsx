@@ -46,6 +46,21 @@ function downloadCSV(name: string, rows: Row[]) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a"); a.href = url; a.download = name; a.click(); URL.revokeObjectURL(url);
 }
+function downloadPDF(name: string, title: string, rows: Row[]) {
+  if (rows.length === 0) { toast.info("No data"); return; }
+  const doc = new jsPDF({ orientation: "landscape" });
+  doc.setFontSize(14);
+  doc.text(title, 14, 14);
+  const columns = Object.keys(rows[0]);
+  autoTable(doc, {
+    startY: 20,
+    head: [columns],
+    body: rows.map((r) => columns.map((c) => String(r[c] ?? ""))),
+    styles: { fontSize: 9 },
+    headStyles: { fillColor: [70, 70, 70] },
+  });
+  doc.save(name);
+}
 
 function Page() {
   const { id } = Route.useParams();
