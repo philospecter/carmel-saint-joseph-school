@@ -93,17 +93,33 @@ function Page() {
     },
   });
 
-  function promoteEntireSchool() {
-    setRepeats(new Set());
-    toast.success(t("year.promote_entire_school"));
-  }
-  function markGroupPromoted(userIds: string[]) {
-    setRepeats((prev) => {
-      const next = new Set(prev);
-      for (const id of userIds) next.delete(id);
-      return next;
-    });
-  }
+  const availableStages = useMemo(() => {
+    if (!roster) return [] as string[];
+    return Array.from(new Set(roster.map((r) => r.stage_group)));
+  }, [roster]);
+  const availableGrades = useMemo(() => {
+    if (!roster) return [] as string[];
+    return Array.from(
+      new Set(
+        roster
+          .filter((r) => stageFilter === "all" || r.stage_group === stageFilter)
+          .map((r) => r.grade_level),
+      ),
+    );
+  }, [roster, stageFilter]);
+
+  const filteredRoster = useMemo(() => {
+    if (!roster) return [];
+    const q = search.trim().toLowerCase();
+    return roster
+      .filter((g) => stageFilter === "all" || g.stage_group === stageFilter)
+      .filter((g) => gradeFilter === "all" || g.grade_level === gradeFilter)
+      .map((g) => ({
+        ...g,
+        students: q ? g.students.filter((s) => s.full_name.toLowerCase().includes(q)) : g.students,
+      }))
+      .filter((g) => g.students.length > 0);
+  }, [roster, search, stageFilter, gradeFilter]);
 
   if (!isAdmin) return <div className="p-8">{t("common.empty")}</div>;
   if (!label.trim()) {
