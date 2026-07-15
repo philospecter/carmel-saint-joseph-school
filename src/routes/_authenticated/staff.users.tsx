@@ -17,6 +17,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { setUserPassword, updateUserProfile, deleteUser, createAdminAccount } from "@/lib/auth.functions";
+import { useCurrentYearId } from "@/lib/rosters";
 import { toast } from "sonner";
 import { formatSupabaseError } from "@/lib/errors";
 
