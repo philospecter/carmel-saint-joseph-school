@@ -96,8 +96,7 @@ function Page() {
   }
 
   async function fetchGrades(): Promise<Row[]> {
-    const { data: enrolls } = await supabase.from("student_enrollments").select("user_id").eq("stage_group", stage as never).eq("grade_level", grade as never);
-    const ids = (enrolls ?? []).map((e) => e.user_id);
+    const ids = await fetchActiveIds();
     if (ids.length === 0) { toast.info("No students"); return []; }
     const [{ data: profs }, { data: subs }, { data: grades }] = await Promise.all([
       supabase.from("profiles").select("id, full_name, national_id").in("id", ids),
