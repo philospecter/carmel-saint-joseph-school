@@ -15,6 +15,8 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { formatSupabaseError } from "@/lib/errors";
 import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export const Route = createFileRoute("/_authenticated/staff/year/$id")({ component: Page });
 
