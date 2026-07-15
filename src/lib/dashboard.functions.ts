@@ -90,12 +90,15 @@ export const getStaffDashboardStats = createServerFn({ method: "GET" })
       pendingSignups = count ?? 0;
     }
 
-    // Recent grades activity (last 5) — scope by stage for SM via subject_stage.
-    const { data: recentRaw } = await sb
+    // Recent grades activity (last 5) — current year only, scoped by stage for SM via subject_stage.
+    let recentQ = sb
       .from("grades")
       .select("id, subject_id, student_id, score, max_score, entered_by, updated_at")
       .order("updated_at", { ascending: false })
       .limit(15);
+    if (currentYearId) recentQ = recentQ.eq("academic_year_id", currentYearId);
+    const { data: recentRaw } = await recentQ;
+
     const recent = (recentRaw ?? []) as Array<{
       id: string;
       subject_id: string;
