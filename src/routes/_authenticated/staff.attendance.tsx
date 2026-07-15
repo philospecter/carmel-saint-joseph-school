@@ -31,15 +31,19 @@ function Page() {
   const [grade, setGrade] = useState<string>(GRADES_BY_STAGE[(stages[0] ?? "primary_1_2") as keyof typeof GRADES_BY_STAGE][0]);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
 
+  const { data: currentYearId } = useCurrentYearId();
+  const effectiveYearId = resolveRosterYear(yearId, currentYearId);
   const { data: students } = useQuery({
-    queryKey: ["staff-att-students", stage, grade, yearId ?? ""],
+    queryKey: ["staff-att-students", stage, grade, effectiveYearId ?? ""],
+    enabled: !!effectiveYearId,
     queryFn: async () => {
-      let q = supabase
+      const q = supabase
         .from("student_enrollments")
         .select("user_id, profiles!student_enrollments_user_id_profiles_fkey(full_name, national_id)")
         .eq("stage_group", stage as never)
-        .eq("grade_level", grade as never);
-      if (yearId) q = q.eq("academic_year_id", yearId as never);
+        .eq("grade_level", grade as never)
+        .eq("is_graduated", false)
+        .eq("academic_year_id", effectiveYearId as never);
       return (await q).data ?? [];
     },
   });
