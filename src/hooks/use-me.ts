@@ -29,12 +29,29 @@ export async function fetchMe(): Promise<Me | null> {
   const user = userData.user;
   if (!user) return null;
 
+  const { data: yearRow } = await supabase
+    .from("academic_years")
+    .select("id")
+    .eq("is_current", true)
+    .maybeSingle();
+  const currentYearId = (yearRow?.id as string | undefined) ?? null;
+
+  const activeEnrollmentQuery = currentYearId
+    ? supabase
+        .from("student_enrollments")
+        .select("stage_group,grade_level")
+        .eq("user_id", user.id)
+        .eq("is_graduated", false)
+        .eq("academic_year_id", currentYearId)
+        .maybeSingle()
+    : Promise.resolve({ data: null });
+
   const [{ data: profile }, { data: roles }, { data: stages }, { data: graduatedRow }, { data: activeEnrollment }] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     supabase.from("user_roles").select("role").eq("user_id", user.id),
     supabase.from("stage_manager_assignments").select("stage_group").eq("user_id", user.id),
     supabase.from("student_enrollments").select("id").eq("user_id", user.id).eq("is_graduated", true).limit(1).maybeSingle(),
-    supabase.from("student_enrollments").select("stage_group,grade_level").eq("user_id", user.id).eq("is_graduated", false).maybeSingle(),
+    activeEnrollmentQuery,
   ]);
 
   return {
