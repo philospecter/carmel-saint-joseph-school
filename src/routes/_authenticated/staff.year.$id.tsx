@@ -15,6 +15,8 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { formatSupabaseError } from "@/lib/errors";
 import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export const Route = createFileRoute("/_authenticated/staff/year/$id")({ component: Page });
 
@@ -43,6 +45,21 @@ function downloadCSV(name: string, rows: Row[]) {
   const blob = new Blob([toCSV(rows)], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a"); a.href = url; a.download = name; a.click(); URL.revokeObjectURL(url);
+}
+function downloadPDF(name: string, title: string, rows: Row[]) {
+  if (rows.length === 0) { toast.info("No data"); return; }
+  const doc = new jsPDF({ orientation: "landscape" });
+  doc.setFontSize(14);
+  doc.text(title, 14, 14);
+  const columns = Object.keys(rows[0]);
+  autoTable(doc, {
+    startY: 20,
+    head: [columns],
+    body: rows.map((r) => columns.map((c) => String(r[c] ?? ""))),
+    styles: { fontSize: 9 },
+    headStyles: { fillColor: [70, 70, 70] },
+  });
+  doc.save(name);
 }
 
 function Page() {
@@ -138,7 +155,7 @@ function GraduatesPanel({ yearId, yearLabel }: { yearId: string; yearLabel: stri
         .eq("is_graduated", true as never)).data ?? [],
   });
 
-  function exportRows(fmt: "csv" | "xlsx") {
+  function exportRows(fmt: "csv" | "xlsx" | "pdf") {
     const rows: Row[] = (grads ?? []).map((s: any) => ({
       name: s.profiles?.full_name ?? "",
       national_id: s.profiles?.national_id ?? "",
@@ -148,7 +165,9 @@ function GraduatesPanel({ yearId, yearLabel }: { yearId: string; yearLabel: stri
       grade: t(`grade.${s.grade_level}`),
     }));
     const base = `graduates_${yearLabel}`;
-    fmt === "csv" ? downloadCSV(`${base}.csv`, rows) : downloadXLSX(`${base}.xlsx`, rows, "Graduates");
+    if (fmt === "csv") downloadCSV(`${base}.csv`, rows);
+    else if (fmt === "xlsx") downloadXLSX(`${base}.xlsx`, rows, "Graduates");
+    else downloadPDF(`${base}.pdf`, `Graduates — ${yearLabel}`, rows);
   }
 
   if (isLoading) return <EmptyState text={t("common.loading")} />;
@@ -183,6 +202,9 @@ function GraduatesPanel({ yearId, yearLabel }: { yearId: string; yearLabel: stri
         </Button>
         <Button size="sm" variant="outline" onClick={() => exportRows("xlsx")} disabled={list.length === 0}>
           <Download className="w-3 h-3 mr-1" />Excel
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => exportRows("pdf")} disabled={list.length === 0}>
+          <Download className="w-3 h-3 mr-1" />PDF
         </Button>
       </div>
     </div>
@@ -287,18 +309,22 @@ function GradesPanel({ yearId, yearLabel }: { yearId: string; yearLabel: string 
     });
   }
 
-  async function exportScope(fmt: "csv" | "xlsx") {
+  async function exportScope(fmt: "csv" | "xlsx" | "pdf") {
     try {
       const rows = await fetchScope();
       const base = `grades_${yearLabel}_${stage}_${grade}`;
-      fmt === "csv" ? downloadCSV(`${base}.csv`, rows) : downloadXLSX(`${base}.xlsx`, rows, "Grades");
+      if (fmt === "csv") downloadCSV(`${base}.csv`, rows);
+      else if (fmt === "xlsx") downloadXLSX(`${base}.xlsx`, rows, "Grades");
+      else downloadPDF(`${base}.pdf`, `Grades — ${yearLabel} · ${t(`stage.${stage}`)} · ${t(`grade.${grade}`)}`, rows);
     } catch (e) { toast.error(formatSupabaseError(e)); }
   }
-  async function exportAll(fmt: "csv" | "xlsx") {
+  async function exportAll(fmt: "csv" | "xlsx" | "pdf") {
     try {
       const rows = await fetchAllSchool();
       const base = `grades_${yearLabel}_all_school`;
-      fmt === "csv" ? downloadCSV(`${base}.csv`, rows) : downloadXLSX(`${base}.xlsx`, rows, "Grades");
+      if (fmt === "csv") downloadCSV(`${base}.csv`, rows);
+      else if (fmt === "xlsx") downloadXLSX(`${base}.xlsx`, rows, "Grades");
+      else downloadPDF(`${base}.pdf`, `Grades — ${yearLabel} · All school`, rows);
     } catch (e) { toast.error(formatSupabaseError(e)); }
   }
 
@@ -364,11 +390,17 @@ function GradesPanel({ yearId, yearLabel }: { yearId: string; yearLabel: string 
         <Button size="sm" variant="outline" onClick={() => exportScope("xlsx")} disabled={!cellReady}>
           <Download className="w-3 h-3 mr-1" />This selection · Excel
         </Button>
+        <Button size="sm" variant="outline" onClick={() => exportScope("pdf")} disabled={!cellReady}>
+          <Download className="w-3 h-3 mr-1" />This selection · PDF
+        </Button>
         <Button size="sm" onClick={() => exportAll("csv")}>
           <Download className="w-3 h-3 mr-1" />All school · CSV
         </Button>
         <Button size="sm" onClick={() => exportAll("xlsx")}>
           <Download className="w-3 h-3 mr-1" />All school · Excel
+        </Button>
+        <Button size="sm" onClick={() => exportAll("pdf")}>
+          <Download className="w-3 h-3 mr-1" />All school · PDF
         </Button>
       </div>
     </div>
@@ -438,18 +470,22 @@ function AttendancePanel({ yearId, yearLabel }: { yearId: string; yearLabel: str
     });
   }
 
-  async function exportScope(fmt: "csv" | "xlsx") {
+  async function exportScope(fmt: "csv" | "xlsx" | "pdf") {
     try {
       const rows = await fetchScope();
       const base = `attendance_${yearLabel}_${stage}_${grade}`;
-      fmt === "csv" ? downloadCSV(`${base}.csv`, rows) : downloadXLSX(`${base}.xlsx`, rows, "Attendance");
+      if (fmt === "csv") downloadCSV(`${base}.csv`, rows);
+      else if (fmt === "xlsx") downloadXLSX(`${base}.xlsx`, rows, "Attendance");
+      else downloadPDF(`${base}.pdf`, `Attendance — ${yearLabel} · ${t(`stage.${stage}`)} · ${t(`grade.${grade}`)}`, rows);
     } catch (e) { toast.error(formatSupabaseError(e)); }
   }
-  async function exportAll(fmt: "csv" | "xlsx") {
+  async function exportAll(fmt: "csv" | "xlsx" | "pdf") {
     try {
       const rows = await fetchAllSchool();
       const base = `attendance_${yearLabel}_all_school`;
-      fmt === "csv" ? downloadCSV(`${base}.csv`, rows) : downloadXLSX(`${base}.xlsx`, rows, "Attendance");
+      if (fmt === "csv") downloadCSV(`${base}.csv`, rows);
+      else if (fmt === "xlsx") downloadXLSX(`${base}.xlsx`, rows, "Attendance");
+      else downloadPDF(`${base}.pdf`, `Attendance — ${yearLabel} · All school`, rows);
     } catch (e) { toast.error(formatSupabaseError(e)); }
   }
 
@@ -496,11 +532,17 @@ function AttendancePanel({ yearId, yearLabel }: { yearId: string; yearLabel: str
         <Button size="sm" variant="outline" onClick={() => exportScope("xlsx")}>
           <Download className="w-3 h-3 mr-1" />This stage/grade · Excel
         </Button>
+        <Button size="sm" variant="outline" onClick={() => exportScope("pdf")}>
+          <Download className="w-3 h-3 mr-1" />This stage/grade · PDF
+        </Button>
         <Button size="sm" onClick={() => exportAll("csv")}>
           <Download className="w-3 h-3 mr-1" />All school · CSV
         </Button>
         <Button size="sm" onClick={() => exportAll("xlsx")}>
           <Download className="w-3 h-3 mr-1" />All school · Excel
+        </Button>
+        <Button size="sm" onClick={() => exportAll("pdf")}>
+          <Download className="w-3 h-3 mr-1" />All school · PDF
         </Button>
       </div>
     </div>
