@@ -56,6 +56,9 @@ function Page() {
   const [repeats, setRepeats] = useState<Set<string>>(new Set());
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [password, setPassword] = useState("");
+  const [search, setSearch] = useState("");
+  const [stageFilter, setStageFilter] = useState<string>("all");
+  const [gradeFilter, setGradeFilter] = useState<string>("all");
 
   const promotions = useMemo(() => {
     if (!roster) return [];
