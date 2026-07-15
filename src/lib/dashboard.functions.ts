@@ -27,6 +27,14 @@ export const getStaffDashboardStats = createServerFn({ method: "GET" })
     const { data: isAdminRaw } = await sb.rpc("has_role", { _user_id: userId, _role: "admin" });
     const isAdmin = !!isAdminRaw;
 
+    // Resolve current academic year — all dashboard metrics scope to it.
+    const { data: yearRow } = await sb
+      .from("academic_years")
+      .select("id")
+      .eq("is_current", true)
+      .maybeSingle();
+    const currentYearId = (yearRow?.id as string | undefined) ?? null;
+
     // Determine scope: admin sees all stages; SM sees their assigned stages.
     let scopeStages: string[] | null = null; // null = all
     if (!isAdmin) {
@@ -42,8 +50,10 @@ export const getStaffDashboardStats = createServerFn({ method: "GET" })
       .from("student_enrollments")
       .select("user_id, stage_group, grade_level", { count: "exact" })
       .eq("is_graduated", false);
+    if (currentYearId) enrollQ = enrollQ.eq("academic_year_id", currentYearId);
     if (scopeStages && scopeStages.length > 0) enrollQ = enrollQ.in("stage_group", scopeStages);
     const { data: enrolls, count: activeCount } = await enrollQ;
+
     const groups = new Map<string, { stage_group: string; grade_level: string }>();
     for (const e of (enrolls ?? []) as Array<{ stage_group: string; grade_level: string }>) {
       const key = `${e.stage_group}|${e.grade_level}`;
