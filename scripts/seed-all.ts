@@ -34,20 +34,30 @@ interface GradeDef {
   teacherIndex: number; // 1..12
 }
 
+const PRIMARY_SUBJECTS = ["Arabic", "Mathematics", "Religion", "French", "English"];
+const PREP_SUBJECTS = [...PRIMARY_SUBJECTS, "Science", "Social Studies"];
+const SEC_SUBJECTS = [...PRIMARY_SUBJECTS, "History", "Geography", "Philosophy", "Integrated Science", "Chemistry", "Physics", "Biology"];
+
 const GRADES: GradeDef[] = [
-  { label: "Primary 1",     grade: "p1",    stage: "primary_1_2", subject: "Primary 1 Homeroom",    teacherIndex: 1  },
-  { label: "Primary 2",     grade: "p2",    stage: "primary_1_2", subject: "Primary 2 Homeroom",    teacherIndex: 2  },
-  { label: "Primary 3",     grade: "p3",    stage: "primary_3_6", subject: "Primary 3 Homeroom",    teacherIndex: 3  },
-  { label: "Primary 4",     grade: "p4",    stage: "primary_3_6", subject: "Primary 4 Homeroom",    teacherIndex: 4  },
-  { label: "Primary 5",     grade: "p5",    stage: "primary_3_6", subject: "Primary 5 Homeroom",    teacherIndex: 5  },
-  { label: "Primary 6",     grade: "p6",    stage: "primary_3_6", subject: "Primary 6 Homeroom",    teacherIndex: 6  },
-  { label: "Preparatory 1", grade: "prep1", stage: "preparatory", subject: "Preparatory 1 Homeroom", teacherIndex: 7  },
-  { label: "Preparatory 2", grade: "prep2", stage: "preparatory", subject: "Preparatory 2 Homeroom", teacherIndex: 8  },
-  { label: "Preparatory 3", grade: "prep3", stage: "preparatory", subject: "Preparatory 3 Homeroom", teacherIndex: 9  },
-  { label: "Secondary 1",   grade: "sec1", stage: "secondary",   subject: "Secondary 1 Homeroom",   teacherIndex: 10 },
-  { label: "Secondary 2",   grade: "sec2", stage: "secondary",   subject: "Secondary 2 Homeroom",   teacherIndex: 11 },
-  { label: "Secondary 3",   grade: "sec3", stage: "secondary",   subject: "Secondary 3 Homeroom",   teacherIndex: 12 },
+  { label: "Primary 1",     grade: "p1",    stage: "primary_1_2", subject: "Arabic",             teacherIndex: 1  },
+  { label: "Primary 2",     grade: "p2",    stage: "primary_1_2", subject: "Mathematics",        teacherIndex: 2  },
+  { label: "Primary 3",     grade: "p3",    stage: "primary_3_6", subject: "Religion",           teacherIndex: 3  },
+  { label: "Primary 4",     grade: "p4",    stage: "primary_3_6", subject: "French",             teacherIndex: 4  },
+  { label: "Primary 5",     grade: "p5",    stage: "primary_3_6", subject: "English",            teacherIndex: 5  },
+  { label: "Primary 6",     grade: "p6",    stage: "primary_3_6", subject: "Arabic",             teacherIndex: 6  },
+  { label: "Preparatory 1", grade: "prep1", stage: "preparatory", subject: "Mathematics",        teacherIndex: 7  },
+  { label: "Preparatory 2", grade: "prep2", stage: "preparatory", subject: "Science",            teacherIndex: 8  },
+  { label: "Preparatory 3", grade: "prep3", stage: "preparatory", subject: "Social Studies",     teacherIndex: 9  },
+  { label: "Secondary 1",   grade: "sec1",  stage: "secondary",   subject: "History",            teacherIndex: 10 },
+  { label: "Secondary 2",   grade: "sec2",  stage: "secondary",   subject: "Chemistry",          teacherIndex: 11 },
+  { label: "Secondary 3",   grade: "sec3",  stage: "secondary",   subject: "Biology",            teacherIndex: 12 },
 ];
+
+function curriculumFor(stage: StageGroup): string[] {
+  if (stage === "primary_1_2" || stage === "primary_3_6") return PRIMARY_SUBJECTS;
+  if (stage === "preparatory") return PREP_SUBJECTS;
+  return SEC_SUBJECTS;
+}
 
 const STUDENTS_PER_GRADE = 6;
 
