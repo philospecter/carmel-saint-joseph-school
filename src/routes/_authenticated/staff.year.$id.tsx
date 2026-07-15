@@ -532,11 +532,17 @@ function AttendancePanel({ yearId, yearLabel }: { yearId: string; yearLabel: str
         <Button size="sm" variant="outline" onClick={() => exportScope("xlsx")}>
           <Download className="w-3 h-3 mr-1" />This stage/grade · Excel
         </Button>
+        <Button size="sm" variant="outline" onClick={() => exportScope("pdf")}>
+          <Download className="w-3 h-3 mr-1" />This stage/grade · PDF
+        </Button>
         <Button size="sm" onClick={() => exportAll("csv")}>
           <Download className="w-3 h-3 mr-1" />All school · CSV
         </Button>
         <Button size="sm" onClick={() => exportAll("xlsx")}>
           <Download className="w-3 h-3 mr-1" />All school · Excel
+        </Button>
+        <Button size="sm" onClick={() => exportAll("pdf")}>
+          <Download className="w-3 h-3 mr-1" />All school · PDF
         </Button>
       </div>
     </div>
