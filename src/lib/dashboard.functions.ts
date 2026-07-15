@@ -27,6 +27,14 @@ export const getStaffDashboardStats = createServerFn({ method: "GET" })
     const { data: isAdminRaw } = await sb.rpc("has_role", { _user_id: userId, _role: "admin" });
     const isAdmin = !!isAdminRaw;
 
+    // Resolve current academic year — all dashboard metrics scope to it.
+    const { data: yearRow } = await sb
+      .from("academic_years")
+      .select("id")
+      .eq("is_current", true)
+      .maybeSingle();
+    const currentYearId = (yearRow?.id as string | undefined) ?? null;
+
     // Determine scope: admin sees all stages; SM sees their assigned stages.
     let scopeStages: string[] | null = null; // null = all
     if (!isAdmin) {
@@ -42,8 +50,10 @@ export const getStaffDashboardStats = createServerFn({ method: "GET" })
       .from("student_enrollments")
       .select("user_id, stage_group, grade_level", { count: "exact" })
       .eq("is_graduated", false);
+    if (currentYearId) enrollQ = enrollQ.eq("academic_year_id", currentYearId);
     if (scopeStages && scopeStages.length > 0) enrollQ = enrollQ.in("stage_group", scopeStages);
     const { data: enrolls, count: activeCount } = await enrollQ;
+
     const groups = new Map<string, { stage_group: string; grade_level: string }>();
     for (const e of (enrolls ?? []) as Array<{ stage_group: string; grade_level: string }>) {
       const key = `${e.stage_group}|${e.grade_level}`;
@@ -80,12 +90,15 @@ export const getStaffDashboardStats = createServerFn({ method: "GET" })
       pendingSignups = count ?? 0;
     }
 
-    // Recent grades activity (last 5) — scope by stage for SM via subject_stage.
-    const { data: recentRaw } = await sb
+    // Recent grades activity (last 5) — current year only, scoped by stage for SM via subject_stage.
+    let recentQ = sb
       .from("grades")
       .select("id, subject_id, student_id, score, max_score, entered_by, updated_at")
       .order("updated_at", { ascending: false })
       .limit(15);
+    if (currentYearId) recentQ = recentQ.eq("academic_year_id", currentYearId);
+    const { data: recentRaw } = await recentQ;
+
     const recent = (recentRaw ?? []) as Array<{
       id: string;
       subject_id: string;
@@ -125,10 +138,13 @@ export const getStaffDashboardStats = createServerFn({ method: "GET" })
         updated_at: r.updated_at,
       }));
 
-    // Sessions pending: subjects with a teacher_assignment in current year but zero grade rows.
-    const { data: assigns } = await sb
+    // Sessions pending: subjects with a teacher_assignment in current year but zero grade rows this year.
+    let assignsQ = sb
       .from("teacher_assignments")
       .select("subject_id, subjects!inner(id, name, stage_group, grade_level)");
+    if (currentYearId) assignsQ = assignsQ.eq("academic_year_id", currentYearId);
+    const { data: assigns } = await assignsQ;
+
     const assignSubjects = ((assigns ?? []) as Array<{ subject_id: string; subjects: any }>).map((a) => a.subjects);
     const scopedAssignSubjects = assignSubjects.filter(
       (s) => isAdmin || (scopeStages && scopeStages.includes(s.stage_group)),
@@ -136,10 +152,13 @@ export const getStaffDashboardStats = createServerFn({ method: "GET" })
     const uniqueSubjects = Array.from(new Map(scopedAssignSubjects.map((s) => [s.id, s])).values());
     const sessionsPending = await Promise.all(
       uniqueSubjects.map(async (s) => {
-        const { count } = await sb
+        let cntQ = sb
           .from("grades")
           .select("id", { count: "exact", head: true })
           .eq("subject_id", s.id);
+        if (currentYearId) cntQ = cntQ.eq("academic_year_id", currentYearId);
+        const { count } = await cntQ;
+
         return (count ?? 0) === 0
           ? { subject_id: s.id, subject_name: s.name, stage_group: s.stage_group, grade_level: s.grade_level }
           : null;
