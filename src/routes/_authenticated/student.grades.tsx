@@ -27,14 +27,16 @@ function Page() {
     queryFn: () => termMonthsFn(),
   });
 
+  const { data: currentYearId } = useCurrentYearId();
   const { data } = useQuery({
-    queryKey: ["student-grades", me?.userId, term],
-    enabled: !!me?.userId,
+    queryKey: ["student-grades", me?.userId, term, currentYearId],
+    enabled: !!me?.userId && !!currentYearId,
     queryFn: async () =>
       (await (supabase as any)
         .from("grades")
         .select("subject_id, term, month, score, max_score, subjects(name)")
         .eq("student_id", me!.userId)
+        .eq("academic_year_id", currentYearId!)
         .eq("term", term)).data ?? [],
   });
 
