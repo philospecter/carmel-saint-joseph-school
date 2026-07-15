@@ -242,7 +242,9 @@ function Page() {
               </div>
             );
           })}
-        </div>
+            </div>
+          )}
+        </>
       )}
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
