@@ -4,11 +4,46 @@ import { supabase } from "@/integrations/supabase/client";
 import { Section, EmptyState } from "@/components/portal/PortalShell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useI18n } from "@/lib/i18n";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useI18n, STAGE_GROUPS, GRADES_BY_STAGE } from "@/lib/i18n";
 import { useMe } from "@/hooks/use-me";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Download } from "lucide-react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+import { formatSupabaseError } from "@/lib/errors";
+import * as XLSX from "xlsx";
 
 export const Route = createFileRoute("/_authenticated/staff/year/$id")({ component: Page });
+
+const MONTH_LABEL = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+type Term = "term_1" | "term_2" | "midyear" | "final";
+const TERMS: Term[] = ["term_1", "term_2", "midyear", "final"];
+
+type Row = Record<string, string | number>;
+
+function downloadXLSX(name: string, rows: Row[], sheet = "Sheet1") {
+  if (rows.length === 0) { toast.info("No data"); return; }
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheet);
+  XLSX.writeFile(wb, name);
+}
+
+function toCSV(rows: Row[]): string {
+  if (rows.length === 0) return "";
+  const cols = Object.keys(rows[0]);
+  const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  return [cols.join(","), ...rows.map((r) => cols.map((c) => esc(r[c])).join(","))].join("\n");
+}
+function downloadCSV(name: string, rows: Row[]) {
+  if (rows.length === 0) { toast.info("No data"); return; }
+  const blob = new Blob([toCSV(rows)], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = name; a.click(); URL.revokeObjectURL(url);
+}
 
 function Page() {
   const { id } = Route.useParams();
@@ -20,28 +55,6 @@ function Page() {
     queryKey: ["year", id],
     queryFn: async () =>
       (await (supabase as any).from("academic_years").select("id,label,started_at,closed_at,is_current").eq("id", id).maybeSingle()).data,
-  });
-  const { data: counts } = useQuery({
-    queryKey: ["year-counts", id],
-    enabled: isAdmin,
-    queryFn: async () => {
-      const [e, g, a, ta, hw, an] = await Promise.all([
-        (supabase as any).from("student_enrollments").select("id", { count: "exact", head: true }).eq("academic_year_id", id),
-        (supabase as any).from("grades").select("id", { count: "exact", head: true }).eq("academic_year_id", id),
-        (supabase as any).from("attendance").select("id", { count: "exact", head: true }).eq("academic_year_id", id),
-        (supabase as any).from("teacher_assignments").select("id", { count: "exact", head: true }).eq("academic_year_id", id),
-        (supabase as any).from("homework").select("id", { count: "exact", head: true }).eq("academic_year_id", id),
-        (supabase as any).from("announcements").select("id", { count: "exact", head: true }).eq("academic_year_id", id),
-      ]);
-      return {
-        enrollments: e.count ?? 0,
-        grades: g.count ?? 0,
-        attendance: a.count ?? 0,
-        teacher_assignments: ta.count ?? 0,
-        homework: hw.count ?? 0,
-        announcements: an.count ?? 0,
-      };
-    },
   });
 
   if (!isAdmin) return <div className="p-8">{t("common.empty")}</div>;
@@ -59,26 +72,9 @@ function Page() {
       <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm mb-4">
         {year.is_current ? t("year.current") : `${t("year.closed")} — ${t("year.viewing_past_readonly")}`}
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {counts && (
-          <>
-            <Stat label={t("nav.subjects")} value={counts.teacher_assignments} sub={t("nav.teachers")} />
-            <Stat label={t("nav.grades")} value={counts.grades} />
-            <Stat label={t("nav.attendance")} value={counts.attendance} />
-            <Stat label={t("nav.announcements")} value={counts.announcements} />
-            <Stat label="Homework" value={counts.homework} />
-            <Stat label="Enrollments" value={counts.enrollments} />
-          </>
-        )}
-      </div>
-      <div className="mt-4 flex gap-2 flex-wrap">
-        <Button asChild variant="outline" size="sm">
-          <Link to="/staff/grades" search={{ year: id }}>{t("year.open_grades")}</Link>
-        </Button>
-        <Button asChild variant="outline" size="sm">
-          <Link to="/staff/attendance" search={{ year: id }}>{t("year.open_attendance")}</Link>
-        </Button>
-      </div>
+
+      <ViewPanel yearId={id} yearLabel={year.label} />
+
       <div className="mt-4 text-xs text-muted-foreground">
         <Badge variant="secondary">{t("year.viewing_past_readonly")}</Badge>
       </div>
@@ -86,11 +82,357 @@ function Page() {
   );
 }
 
-function Stat({ label, value, sub }: { label: string; value: number; sub?: string }) {
+function ViewPanel({ yearId, yearLabel }: { yearId: string; yearLabel: string }) {
+  const { t } = useI18n();
+  const [mode, setMode] = useState<"grades" | "attendance" | null>(null);
+
   return (
-    <div className="rounded-lg border p-3">
-      <div className="text-xs text-muted-foreground">{label}{sub ? ` · ${sub}` : ""}</div>
-      <div className="font-serif text-2xl mt-1">{value}</div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">View year data</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex gap-2">
+          <Button
+            variant={mode === "grades" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setMode("grades")}
+          >
+            {t("nav.grades")}
+          </Button>
+          <Button
+            variant={mode === "attendance" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setMode("attendance")}
+          >
+            {t("nav.attendance")}
+          </Button>
+        </div>
+
+        {mode === "grades" && <GradesPanel yearId={yearId} yearLabel={yearLabel} />}
+        {mode === "attendance" && <AttendancePanel yearId={yearId} yearLabel={yearLabel} />}
+        {mode === null && (
+          <div className="text-sm text-muted-foreground">Choose what you want to view.</div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function GradesPanel({ yearId, yearLabel }: { yearId: string; yearLabel: string }) {
+  const { t } = useI18n();
+  const stages = [...STAGE_GROUPS];
+  const [stage, setStage] = useState<string>(stages[0]);
+  const [grade, setGrade] = useState<string>(GRADES_BY_STAGE[stages[0] as keyof typeof GRADES_BY_STAGE][0]);
+  const [subject, setSubject] = useState<string>("");
+  const [term, setTerm] = useState<Term>("term_1");
+  const [month, setMonth] = useState<string>("");
+
+  const gradesForStage = GRADES_BY_STAGE[stage as keyof typeof GRADES_BY_STAGE] ?? [];
+  const showMonth = term === "term_1" || term === "term_2";
+
+  const { data: subjects } = useQuery({
+    queryKey: ["yr-subj", stage, grade],
+    queryFn: async () =>
+      (await (supabase as any).from("subjects").select("id, name")
+        .eq("stage_group", stage).eq("grade_level", grade).order("name")).data ?? [],
+  });
+
+  const { data: students } = useQuery({
+    queryKey: ["yr-stud", yearId, stage, grade],
+    queryFn: async () =>
+      (await supabase.from("student_enrollments")
+        .select("user_id, profiles!student_enrollments_user_id_profiles_fkey(full_name, national_id)")
+        .eq("academic_year_id", yearId as never)
+        .eq("stage_group", stage as never)
+        .eq("grade_level", grade as never)).data ?? [],
+  });
+
+  const cellReady = !!subject && (term === "midyear" || term === "final" || month !== "");
+
+  const { data: cellGrades } = useQuery({
+    queryKey: ["yr-grades", yearId, subject, term, month],
+    enabled: cellReady,
+    queryFn: async () => {
+      let q = (supabase as any).from("grades")
+        .select("student_id, score, max_score")
+        .eq("academic_year_id", yearId)
+        .eq("subject_id", subject)
+        .eq("term", term);
+      q = month === "" ? q.is("month", null) : q.eq("month", Number(month));
+      return (await q).data ?? [];
+    },
+  });
+  const gMap = new Map<string, { score: number; max_score: number }>(
+    (cellGrades ?? []).map((g: any) => [g.student_id, { score: g.score, max_score: g.max_score }]),
+  );
+
+  async function fetchScope(): Promise<Row[]> {
+    if (!cellReady) return [];
+    const rows: Row[] = [];
+    const subjName = (subjects ?? []).find((s: any) => s.id === subject)?.name ?? "";
+    for (const s of students ?? []) {
+      const p = (s as any).profiles;
+      const g = gMap.get(s.user_id);
+      rows.push({
+        name: p?.full_name ?? "",
+        national_id: p?.national_id ?? "",
+        stage: t(`stage.${stage}`),
+        grade: t(`grade.${grade}`),
+        subject: subjName,
+        term: t(`term.${term}`),
+        month: month === "" ? "" : MONTH_LABEL[Number(month)],
+        score: g?.score ?? "",
+        max_score: g?.max_score ?? "",
+      });
+    }
+    return rows;
+  }
+
+  async function fetchAllSchool(): Promise<Row[]> {
+    const [{ data: enrolls }, { data: subs }, { data: grades }] = await Promise.all([
+      supabase.from("student_enrollments")
+        .select("user_id, stage_group, grade_level, profiles!student_enrollments_user_id_profiles_fkey(full_name, national_id)")
+        .eq("academic_year_id", yearId as never),
+      (supabase as any).from("subjects").select("id, name, stage_group, grade_level"),
+      (supabase as any).from("grades").select("student_id, subject_id, term, month, score, max_score").eq("academic_year_id", yearId),
+    ]);
+    const eMap = new Map((enrolls ?? []).map((e: any) => [e.user_id, e]));
+    const sMap = new Map((subs ?? []).map((s: any) => [s.id, s]));
+    return ((grades ?? []) as any[]).map((g) => {
+      const e: any = eMap.get(g.student_id);
+      const p = e?.profiles;
+      const su: any = sMap.get(g.subject_id);
+      return {
+        name: p?.full_name ?? "",
+        national_id: p?.national_id ?? "",
+        stage: e ? t(`stage.${e.stage_group}`) : "",
+        grade: e ? t(`grade.${e.grade_level}`) : "",
+        subject: su?.name ?? "",
+        term: t(`term.${g.term}`),
+        month: g.month == null ? "" : MONTH_LABEL[g.month],
+        score: g.score,
+        max_score: g.max_score,
+      };
+    });
+  }
+
+  async function exportScope(fmt: "csv" | "xlsx") {
+    try {
+      const rows = await fetchScope();
+      const base = `grades_${yearLabel}_${stage}_${grade}`;
+      fmt === "csv" ? downloadCSV(`${base}.csv`, rows) : downloadXLSX(`${base}.xlsx`, rows, "Grades");
+    } catch (e) { toast.error(formatSupabaseError(e)); }
+  }
+  async function exportAll(fmt: "csv" | "xlsx") {
+    try {
+      const rows = await fetchAllSchool();
+      const base = `grades_${yearLabel}_all_school`;
+      fmt === "csv" ? downloadCSV(`${base}.csv`, rows) : downloadXLSX(`${base}.xlsx`, rows, "Grades");
+    } catch (e) { toast.error(formatSupabaseError(e)); }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2 items-end">
+        <div><Label className="text-xs">{t("nav.subjects")}</Label>
+          <Select value={stage} onValueChange={(v) => { setStage(v); setGrade(GRADES_BY_STAGE[v as keyof typeof GRADES_BY_STAGE][0]); setSubject(""); }}>
+            <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+            <SelectContent>{stages.map((s) => <SelectItem key={s} value={s}>{t(`stage.${s}`)}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+        <Select value={grade} onValueChange={(v) => { setGrade(v); setSubject(""); }}>
+          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+          <SelectContent>{gradesForStage.map((g) => <SelectItem key={g} value={g}>{t(`grade.${g}`)}</SelectItem>)}</SelectContent>
+        </Select>
+        <Select value={subject} onValueChange={setSubject}>
+          <SelectTrigger className="w-56"><SelectValue placeholder="Subject" /></SelectTrigger>
+          <SelectContent>{(subjects ?? []).map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+        </Select>
+        <Select value={term} onValueChange={(v) => { setTerm(v as Term); setMonth(""); }}>
+          <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+          <SelectContent>{TERMS.map((tm) => <SelectItem key={tm} value={tm}>{t(`term.${tm}`)}</SelectItem>)}</SelectContent>
+        </Select>
+        {showMonth && (
+          <Select value={month} onValueChange={setMonth}>
+            <SelectTrigger className="w-32"><SelectValue placeholder="Month" /></SelectTrigger>
+            <SelectContent>
+              {[9,10,11,12,1,2,3,4,5,6].map((m) => <SelectItem key={m} value={String(m)}>{MONTH_LABEL[m]}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+
+      {!cellReady ? (
+        <EmptyState text="Pick a subject, term, and month." />
+      ) : (students ?? []).length === 0 ? (
+        <EmptyState text={t("common.empty")} />
+      ) : (
+        <div className="rounded-lg border divide-y">
+          {students!.map((s) => {
+            const p = (s as any).profiles;
+            const g = gMap.get(s.user_id);
+            return (
+              <div key={s.user_id} className="p-3 flex items-center justify-between gap-3">
+                <div className="truncate">{p?.full_name ?? "—"}</div>
+                {g ? (
+                  <Badge variant={g.score < g.max_score / 2 ? "destructive" : "secondary"} className="font-serif text-base px-3 py-1">
+                    {g.score}/{g.max_score}
+                  </Badge>
+                ) : <span className="text-sm text-muted-foreground">—</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2 pt-2 border-t">
+        <div className="text-sm font-medium w-full">Export</div>
+        <Button size="sm" variant="outline" onClick={() => exportScope("csv")} disabled={!cellReady}>
+          <Download className="w-3 h-3 mr-1" />This selection · CSV
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => exportScope("xlsx")} disabled={!cellReady}>
+          <Download className="w-3 h-3 mr-1" />This selection · Excel
+        </Button>
+        <Button size="sm" onClick={() => exportAll("csv")}>
+          <Download className="w-3 h-3 mr-1" />All school · CSV
+        </Button>
+        <Button size="sm" onClick={() => exportAll("xlsx")}>
+          <Download className="w-3 h-3 mr-1" />All school · Excel
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function AttendancePanel({ yearId, yearLabel }: { yearId: string; yearLabel: string }) {
+  const { t } = useI18n();
+  const stages = [...STAGE_GROUPS];
+  const [stage, setStage] = useState<string>(stages[0]);
+  const [grade, setGrade] = useState<string>(GRADES_BY_STAGE[stages[0] as keyof typeof GRADES_BY_STAGE][0]);
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+
+  const gradesForStage = GRADES_BY_STAGE[stage as keyof typeof GRADES_BY_STAGE] ?? [];
+
+  const { data: students } = useQuery({
+    queryKey: ["yr-att-stud", yearId, stage, grade],
+    queryFn: async () =>
+      (await supabase.from("student_enrollments")
+        .select("user_id, profiles!student_enrollments_user_id_profiles_fkey(full_name, national_id)")
+        .eq("academic_year_id", yearId as never)
+        .eq("stage_group", stage as never)
+        .eq("grade_level", grade as never)).data ?? [],
+  });
+
+  const { data: recs } = useQuery({
+    queryKey: ["yr-att-recs", yearId, date],
+    queryFn: async () =>
+      (await supabase.from("attendance").select("student_id, status").eq("academic_year_id", yearId as never).eq("date", date)).data ?? [],
+  });
+  const aMap = useMemo(() => new Map((recs ?? []).map((r: any) => [r.student_id, r.status])), [recs]);
+
+  async function fetchScope(): Promise<Row[]> {
+    const ids = (students ?? []).map((s: any) => s.user_id);
+    if (ids.length === 0) return [];
+    const { data: att } = await supabase.from("attendance").select("*").eq("academic_year_id", yearId as never).in("student_id", ids);
+    const pMap = new Map((students ?? []).map((s: any) => [s.user_id, s.profiles]));
+    return ((att ?? []) as any[]).map((a) => ({
+      name: (pMap.get(a.student_id) as any)?.full_name ?? "",
+      national_id: (pMap.get(a.student_id) as any)?.national_id ?? "",
+      stage: t(`stage.${stage}`),
+      grade: t(`grade.${grade}`),
+      date: a.date,
+      status: a.status,
+    }));
+  }
+
+  async function fetchAllSchool(): Promise<Row[]> {
+    const [{ data: enrolls }, { data: att }] = await Promise.all([
+      supabase.from("student_enrollments")
+        .select("user_id, stage_group, grade_level, profiles!student_enrollments_user_id_profiles_fkey(full_name, national_id)")
+        .eq("academic_year_id", yearId as never),
+      supabase.from("attendance").select("*").eq("academic_year_id", yearId as never),
+    ]);
+    const eMap = new Map((enrolls ?? []).map((e: any) => [e.user_id, e]));
+    return ((att ?? []) as any[]).map((a) => {
+      const e: any = eMap.get(a.student_id);
+      const p = e?.profiles;
+      return {
+        name: p?.full_name ?? "",
+        national_id: p?.national_id ?? "",
+        stage: e ? t(`stage.${e.stage_group}`) : "",
+        grade: e ? t(`grade.${e.grade_level}`) : "",
+        date: a.date,
+        status: a.status,
+      };
+    });
+  }
+
+  async function exportScope(fmt: "csv" | "xlsx") {
+    try {
+      const rows = await fetchScope();
+      const base = `attendance_${yearLabel}_${stage}_${grade}`;
+      fmt === "csv" ? downloadCSV(`${base}.csv`, rows) : downloadXLSX(`${base}.xlsx`, rows, "Attendance");
+    } catch (e) { toast.error(formatSupabaseError(e)); }
+  }
+  async function exportAll(fmt: "csv" | "xlsx") {
+    try {
+      const rows = await fetchAllSchool();
+      const base = `attendance_${yearLabel}_all_school`;
+      fmt === "csv" ? downloadCSV(`${base}.csv`, rows) : downloadXLSX(`${base}.xlsx`, rows, "Attendance");
+    } catch (e) { toast.error(formatSupabaseError(e)); }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2 items-end">
+        <Select value={stage} onValueChange={(v) => { setStage(v); setGrade(GRADES_BY_STAGE[v as keyof typeof GRADES_BY_STAGE][0]); }}>
+          <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+          <SelectContent>{stages.map((s) => <SelectItem key={s} value={s}>{t(`stage.${s}`)}</SelectItem>)}</SelectContent>
+        </Select>
+        <Select value={grade} onValueChange={setGrade}>
+          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+          <SelectContent>{gradesForStage.map((g) => <SelectItem key={g} value={g}>{t(`grade.${g}`)}</SelectItem>)}</SelectContent>
+        </Select>
+        <Input type="date" className="w-44" value={date} onChange={(e) => setDate(e.target.value)} />
+      </div>
+
+      {(students ?? []).length === 0 ? (
+        <EmptyState text={t("common.empty")} />
+      ) : (
+        <div className="rounded-lg border divide-y">
+          {students!.map((s) => {
+            const p = (s as any).profiles;
+            const status = aMap.get(s.user_id);
+            return (
+              <div key={s.user_id} className="p-3 flex items-center justify-between gap-3">
+                <div className="truncate">{p?.full_name ?? "—"}</div>
+                {status ? (
+                  <Badge variant={status === "present" ? "secondary" : status === "late" ? "outline" : "destructive"}>
+                    {t(`attendance.${status}`)}
+                  </Badge>
+                ) : <span className="text-sm text-muted-foreground">—</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2 pt-2 border-t">
+        <div className="text-sm font-medium w-full">Export</div>
+        <Button size="sm" variant="outline" onClick={() => exportScope("csv")}>
+          <Download className="w-3 h-3 mr-1" />This stage/grade · CSV
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => exportScope("xlsx")}>
+          <Download className="w-3 h-3 mr-1" />This stage/grade · Excel
+        </Button>
+        <Button size="sm" onClick={() => exportAll("csv")}>
+          <Download className="w-3 h-3 mr-1" />All school · CSV
+        </Button>
+        <Button size="sm" onClick={() => exportAll("xlsx")}>
+          <Download className="w-3 h-3 mr-1" />All school · Excel
+        </Button>
+      </div>
     </div>
   );
 }
