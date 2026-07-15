@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
 import { formatSupabaseError } from "@/lib/errors";
+import { useCurrentYearId, resolveRosterYear } from "@/lib/rosters";
 
 export const Route = createFileRoute("/_authenticated/staff/attendance")({
   validateSearch: (search: Record<string, unknown>): { year?: string } => ({
