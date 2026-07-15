@@ -203,6 +203,9 @@ function GraduatesPanel({ yearId, yearLabel }: { yearId: string; yearLabel: stri
         <Button size="sm" variant="outline" onClick={() => exportRows("xlsx")} disabled={list.length === 0}>
           <Download className="w-3 h-3 mr-1" />Excel
         </Button>
+        <Button size="sm" variant="outline" onClick={() => exportRows("pdf")} disabled={list.length === 0}>
+          <Download className="w-3 h-3 mr-1" />PDF
+        </Button>
       </div>
     </div>
   );
