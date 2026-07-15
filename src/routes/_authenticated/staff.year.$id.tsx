@@ -84,7 +84,7 @@ function Page() {
 
 function ViewPanel({ yearId, yearLabel }: { yearId: string; yearLabel: string }) {
   const { t } = useI18n();
-  const [mode, setMode] = useState<"grades" | "attendance" | null>(null);
+  const [mode, setMode] = useState<"grades" | "attendance" | "graduates" | null>(null);
 
   return (
     <Card>
@@ -92,7 +92,7 @@ function ViewPanel({ yearId, yearLabel }: { yearId: string; yearLabel: string })
         <CardTitle className="text-base">View year data</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant={mode === "grades" ? "default" : "outline"}
             size="sm"
@@ -107,15 +107,85 @@ function ViewPanel({ yearId, yearLabel }: { yearId: string; yearLabel: string })
           >
             {t("nav.attendance")}
           </Button>
+          <Button
+            variant={mode === "graduates" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setMode("graduates")}
+          >
+            Graduates
+          </Button>
         </div>
 
         {mode === "grades" && <GradesPanel yearId={yearId} yearLabel={yearLabel} />}
         {mode === "attendance" && <AttendancePanel yearId={yearId} yearLabel={yearLabel} />}
+        {mode === "graduates" && <GraduatesPanel yearId={yearId} yearLabel={yearLabel} />}
         {mode === null && (
           <div className="text-sm text-muted-foreground">Choose what you want to view.</div>
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function GraduatesPanel({ yearId, yearLabel }: { yearId: string; yearLabel: string }) {
+  const { t } = useI18n();
+  const { data: grads, isLoading } = useQuery({
+    queryKey: ["yr-graduates", yearId],
+    queryFn: async () =>
+      (await supabase.from("student_enrollments")
+        .select("user_id, stage_group, grade_level, profiles!student_enrollments_user_id_profiles_fkey(full_name, national_id, email, mobile)")
+        .eq("academic_year_id", yearId as never)
+        .eq("is_graduated", true as never)).data ?? [],
+  });
+
+  function exportRows(fmt: "csv" | "xlsx") {
+    const rows: Row[] = (grads ?? []).map((s: any) => ({
+      name: s.profiles?.full_name ?? "",
+      national_id: s.profiles?.national_id ?? "",
+      email: s.profiles?.email ?? "",
+      mobile: s.profiles?.mobile ?? "",
+      stage: t(`stage.${s.stage_group}`),
+      grade: t(`grade.${s.grade_level}`),
+    }));
+    const base = `graduates_${yearLabel}`;
+    fmt === "csv" ? downloadCSV(`${base}.csv`, rows) : downloadXLSX(`${base}.xlsx`, rows, "Graduates");
+  }
+
+  if (isLoading) return <EmptyState text={t("common.loading")} />;
+  const list = grads ?? [];
+
+  return (
+    <div className="space-y-4">
+      <div className="text-sm text-muted-foreground">
+        {list.length} student{list.length === 1 ? "" : "s"} graduated in {yearLabel}
+      </div>
+      {list.length === 0 ? (
+        <EmptyState text="No graduates for this year." />
+      ) : (
+        <div className="rounded-lg border divide-y">
+          {list.map((s: any) => (
+            <div key={s.user_id} className="p-3 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="truncate font-medium">{s.profiles?.full_name ?? "—"}</div>
+                <div className="text-xs text-muted-foreground truncate">
+                  {s.profiles?.national_id ?? "—"} · {t(`stage.${s.stage_group}`)} · {t(`grade.${s.grade_level}`)}
+                </div>
+              </div>
+              <Badge variant="secondary">Graduated</Badge>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="flex flex-wrap gap-2 pt-2 border-t">
+        <div className="text-sm font-medium w-full">Export</div>
+        <Button size="sm" variant="outline" onClick={() => exportRows("csv")} disabled={list.length === 0}>
+          <Download className="w-3 h-3 mr-1" />CSV
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => exportRows("xlsx")} disabled={list.length === 0}>
+          <Download className="w-3 h-3 mr-1" />Excel
+        </Button>
+      </div>
+    </div>
   );
 }
 
