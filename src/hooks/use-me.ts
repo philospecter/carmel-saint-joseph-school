@@ -21,6 +21,7 @@ export type Me = {
   roles: Role[];
   stages: Stage[]; // stages this user manages (for SM)
   enrollment: { stage_group: Stage; grade_level: Grade } | null;
+  isGraduated: boolean;
 };
 
 export async function fetchMe(): Promise<Me | null> {
@@ -28,11 +29,12 @@ export async function fetchMe(): Promise<Me | null> {
   const user = userData.user;
   if (!user) return null;
 
-  const [{ data: profile }, { data: roles }, { data: stages }, { data: enrollment }] = await Promise.all([
+  const [{ data: profile }, { data: roles }, { data: stages }, { data: graduatedRow }, { data: activeEnrollment }] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     supabase.from("user_roles").select("role").eq("user_id", user.id),
     supabase.from("stage_manager_assignments").select("stage_group").eq("user_id", user.id),
-    supabase.from("student_enrollments").select("stage_group,grade_level").eq("user_id", user.id).maybeSingle(),
+    supabase.from("student_enrollments").select("id").eq("user_id", user.id).eq("is_graduated", true).limit(1).maybeSingle(),
+    supabase.from("student_enrollments").select("stage_group,grade_level").eq("user_id", user.id).eq("is_graduated", false).maybeSingle(),
   ]);
 
   return {
@@ -41,7 +43,8 @@ export async function fetchMe(): Promise<Me | null> {
     profile: (profile as Me["profile"]) ?? null,
     roles: (roles ?? []).map((r) => r.role as Role),
     stages: (stages ?? []).map((s) => s.stage_group as Stage),
-    enrollment: (enrollment as Me["enrollment"]) ?? null,
+    enrollment: (activeEnrollment as Me["enrollment"]) ?? null,
+    isGraduated: !!graduatedRow && !activeEnrollment,
   };
 }
 
