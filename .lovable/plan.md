@@ -1,51 +1,63 @@
-## Diagnosis
 
-Roster queries pull from `student_enrollments` filtered only by `stage_group` and `grade_level`. When no `yearId` is provided (the normal Admin/Stage Manager entry flow), they return rows across ALL years — including graduated `sec3` rows in past years and any old-year enrollments that weren't rolled into the current year. Result: graduated + historically-enrolled students show up on today's roster.
+## Goal
 
-### Affected queries (all missing `academic_year_id = current` AND `is_graduated = false`)
+End-to-end QA of the four core flows (Attendance, Grading, Question Banks, Homework) across all three portals (Admin/Staff, Teacher, Student), then a written report — no fixes applied this round.
 
-1. `src/routes/_authenticated/staff.grades.tsx` (lines 91–102) — Grades entry roster.
-2. `src/routes/_authenticated/staff.attendance.tsx` (lines 34–43) — Attendance entry roster.
-3. `src/routes/_authenticated/staff.export.tsx` (lines 69, 86) — Export by grade/stage rosters.
-4. `src/routes/_authenticated/staff.users.tsx` (line 64) — Users management enrollment lookup (pulls all-year rows; can attribute wrong current stage/grade to a student who has multiple year rows).
+## Step 1 — Grant admin access
 
-Not affected (already correctly scoped):
-- `src/lib/dashboard.functions.ts` (filters `is_graduated=false`, scoped by current year in the query context).
-- `src/lib/academic-years.functions.ts` preview functions (explicitly filter by year + `is_graduated=false`).
-- `staff.year.$id.tsx` (always passes an explicit year id).
+Run a one-line data update via the insert tool:
 
-### Grades/attendance for a new year starting empty
+```
+INSERT INTO public.user_roles (user_id, role)
+SELECT id, 'admin' FROM auth.users WHERE email = 'teacher1@gmail.com'
+ON CONFLICT DO NOTHING;
+```
 
-`grades` and `attendance` inserts include `academic_year_id`, and read queries in those roster screens filter by `date` (attendance) or by `subject/term/month + year_id` (grades server fns). So new-year cells legitimately start empty — this piece works. Confirmed by inspection, no code change needed.
+This gives `teacher1@gmail.com / teacher1476` both teacher and admin roles so I can exercise every screen with a single login. Nothing else in the schema or seed data changes.
 
-## Fix
+If you'd rather I use a different existing account (or a brand-new dedicated admin email/password), say so and I'll use that instead.
 
-Introduce a single shared roster helper and route the four affected screens through it, so this class of bug can't recur on a new screen.
+## Step 2 — Test matrix
 
-1. **New helper** `src/lib/rosters.ts`:
-   ```ts
-   export function activeRosterQuery(supabase, { stage, grade, yearId }) {
-     let q = supabase
-       .from("student_enrollments")
-       .select("user_id, stage_group, grade_level, is_graduated, academic_year_id, profiles!student_enrollments_user_id_profiles_fkey(full_name, national_id)")
-       .eq("stage_group", stage)
-       .eq("grade_level", grade)
-       .eq("is_graduated", false);
-     if (yearId) q = q.eq("academic_year_id", yearId);
-     else q = q.eq("academic_year_id", supabase.rpc(...))  // see below
-     return q;
-   }
-   ```
-   Because PostgREST can't inline an RPC into `.eq`, the helper will first resolve the current year id via a small cached query (`academic_years` where `is_current=true`) and then apply `.eq("academic_year_id", currentId)`. Exposed as `useCurrentYearId()` hook + `activeRosterQuery` builder.
+For each area I'll drive the live preview with Playwright, capture screenshots, watch console + network, and query the DB to confirm writes landed correctly and are year/roster-scoped.
 
-2. **Update the four call sites** to use `activeRosterQuery` (or the equivalent scoped query for `staff.users.tsx`, which needs the full enrollment map — filter to `is_graduated=false` AND current year).
+**Attendance**
+- Staff: mark present/late/absent for a class; "Mark all present"; switch date; confirm rows in `attendance`.
+- Student view of own attendance.
+- Historical year read-only view (`?year=`) shows past data, blocks edits.
 
-3. **Belt-and-suspenders at the DB layer**: add a permissive-facing note only; no RLS change required because past-year read access is intentionally allowed for the historical View screens. The frontend scoping is the correct place for the "active roster" contract.
+**Grading**
+- Staff: set subject max score, enter grades, edit max (confirm dialog → clears cell), verify lock behavior.
+- Teacher: enter grades on assigned subject only; permission checks on unassigned subjects.
+- Student: sees own grades, totals, term filtering.
+- Historical year view is read-only.
 
-### Verification
+**Question Banks**
+- Teacher: create bank, add MCQ / short-answer questions, edit, delete.
+- Reuse a bank when creating homework.
+- RLS: teacher can't see another teacher's bank.
 
-- Load Grades entry as Admin for Secondary 3 → previous graduates no longer appear.
-- Load Attendance entry for the same → same.
-- Load Export → totals match current-year active students only.
-- Load Users → each student shows exactly one current-year stage/grade.
-- Confirm historical View (`?year=<past>`) still shows past-year rosters unchanged.
+**Homework**
+- Teacher: create assignment (with questions and/or file), set due date, publish.
+- Student: view list, open, submit answers + upload file to `homework-files` bucket, view submission state.
+- Teacher: see submissions, grade them, feedback visible to student.
+- Announcements linkage on the subject page.
+
+**Cross-cutting spot-checks**
+- Graduated-student login → congratulations screen only.
+- Dashboard counts (active students, sessions pending, recent grades) scoped to current year.
+- Rosters everywhere exclude graduated / other-year students.
+
+## Step 3 — Report
+
+You'll get a single report grouped by area with:
+- What works
+- Bugs found (severity, reproduction steps, screenshot, suspected root cause)
+- Anything I couldn't test and why
+
+No code or schema changes beyond the one-line admin grant in Step 1 until you approve fixes.
+
+## Confirmations needed
+
+1. OK to promote `teacher1@gmail.com` to admin? (Or provide a different account.)
+2. OK that Step 1 writes to `user_roles` — everything else is read-only inspection plus test data I create through the UI (a few attendance rows, grades, a question bank, a homework assignment) using the seeded accounts.
