@@ -5,12 +5,14 @@ import { Section } from "@/components/portal/PortalShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useCurrentYearId } from "@/lib/rosters";
 
 export const Route = createFileRoute("/_authenticated/student/")({ component: Dashboard });
 
 function Dashboard() {
   const { t } = useI18n();
   const { data: me } = useMe();
+  const { data: currentYearId } = useCurrentYearId();
   const stage = me?.enrollment?.stage_group;
   const grade = me?.enrollment?.grade_level;
 
@@ -24,25 +26,24 @@ function Dashboard() {
   });
 
   const { data: attToday } = useQuery({
-    queryKey: ["student-att-today", me?.userId],
-    enabled: !!me?.userId,
+    queryKey: ["student-att-today", me?.userId, currentYearId],
+    enabled: !!me?.userId && !!currentYearId,
     queryFn: async () => {
       const today = new Date().toISOString().slice(0, 10);
-      const { data } = await supabase.from("attendance").select("status").eq("student_id", me!.userId).eq("date", today).maybeSingle();
+      const { data } = await supabase.from("attendance").select("status").eq("student_id", me!.userId).eq("academic_year_id", currentYearId!).eq("date", today).maybeSingle();
       return data?.status ?? null;
     },
   });
 
-  const yearStart = `${new Date().getFullYear()}-01-01`;
   const { data: attSummary } = useQuery({
-    queryKey: ["student-att-sum", me?.userId],
-    enabled: !!me?.userId,
+    queryKey: ["student-att-sum", me?.userId, currentYearId],
+    enabled: !!me?.userId && !!currentYearId,
     queryFn: async () => {
       const { data } = await supabase
         .from("attendance")
         .select("status")
         .eq("student_id", me!.userId)
-        .gte("date", yearStart);
+        .eq("academic_year_id", currentYearId!);
       const rows = data ?? [];
       return {
         absent: rows.filter((r) => r.status === "absent").length,
@@ -52,13 +53,14 @@ function Dashboard() {
   });
 
   const { data: recentGrades } = useQuery({
-    queryKey: ["student-recent-grades", me?.userId],
-    enabled: !!me?.userId,
+    queryKey: ["student-recent-grades", me?.userId, currentYearId],
+    enabled: !!me?.userId && !!currentYearId,
     queryFn: async () => {
       const { data } = await supabase
         .from("grades")
         .select("id, score, term, committed_at, subjects(name)")
         .eq("student_id", me!.userId)
+        .eq("academic_year_id", currentYearId!)
         .order("committed_at", { ascending: false })
         .limit(3);
       return data ?? [];
