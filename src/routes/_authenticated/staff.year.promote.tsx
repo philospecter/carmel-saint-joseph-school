@@ -8,9 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Search } from "lucide-react";
 import { useMe } from "@/hooks/use-me";
 import { supabase } from "@/integrations/supabase/client";
 import { previewCurrentYearRoster, startYearAndPromote } from "@/lib/academic-years.functions";
@@ -55,6 +56,9 @@ function Page() {
   const [repeats, setRepeats] = useState<Set<string>>(new Set());
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [password, setPassword] = useState("");
+  const [search, setSearch] = useState("");
+  const [stageFilter, setStageFilter] = useState<string>("all");
+  const [gradeFilter, setGradeFilter] = useState<string>("all");
 
   const promotions = useMemo(() => {
     if (!roster) return [];
@@ -89,17 +93,33 @@ function Page() {
     },
   });
 
-  function promoteEntireSchool() {
-    setRepeats(new Set());
-    toast.success(t("year.promote_entire_school"));
-  }
-  function markGroupPromoted(userIds: string[]) {
-    setRepeats((prev) => {
-      const next = new Set(prev);
-      for (const id of userIds) next.delete(id);
-      return next;
-    });
-  }
+  const availableStages = useMemo(() => {
+    if (!roster) return [] as string[];
+    return Array.from(new Set(roster.map((r) => r.stage_group)));
+  }, [roster]);
+  const availableGrades = useMemo(() => {
+    if (!roster) return [] as string[];
+    return Array.from(
+      new Set(
+        roster
+          .filter((r) => stageFilter === "all" || r.stage_group === stageFilter)
+          .map((r) => r.grade_level),
+      ),
+    );
+  }, [roster, stageFilter]);
+
+  const filteredRoster = useMemo(() => {
+    if (!roster) return [];
+    const q = search.trim().toLowerCase();
+    return roster
+      .filter((g) => stageFilter === "all" || g.stage_group === stageFilter)
+      .filter((g) => gradeFilter === "all" || g.grade_level === gradeFilter)
+      .map((g) => ({
+        ...g,
+        students: q ? g.students.filter((s) => s.full_name.toLowerCase().includes(q)) : g.students,
+      }))
+      .filter((g) => g.students.length > 0);
+  }, [roster, search, stageFilter, gradeFilter]);
 
   if (!isAdmin) return <div className="p-8">{t("common.empty")}</div>;
   if (!label.trim()) {
@@ -118,10 +138,7 @@ function Page() {
     <Section
       title={t("year.promote_title")}
       action={
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={promoteEntireSchool}>{t("year.promote_entire_school")}</Button>
-          <Button onClick={() => { setPassword(""); setConfirmOpen(true); }}>{t("year.confirm_and_start")}</Button>
-        </div>
+        <Button onClick={() => { setPassword(""); setConfirmOpen(true); }}>{t("year.confirm_and_start")}</Button>
       }
     >
       <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm mb-4 flex gap-2">
@@ -136,39 +153,67 @@ function Page() {
       {roster.length === 0 ? (
         <EmptyState text={t("year.no_students_to_promote")} />
       ) : (
-        <div className="space-y-6">
-          {roster.map((group) => {
-            const isGrad = NEXT[group.grade_level] === "graduate";
-            const next = NEXT[group.grade_level];
-            const groupIds = group.students.map((s) => s.user_id);
-            const anyRepeat = groupIds.some((id) => repeats.has(id));
-            return (
-              <div key={`${group.stage_group}|${group.grade_level}`} className="rounded-lg border">
-                <div className="p-3 border-b flex items-center justify-between gap-2 flex-wrap">
-                  <div className="font-serif text-lg">
-                    {isGrad ? (
-                      <>
-                        {t(`grade.${group.grade_level}`)} <span className="text-muted-foreground">→</span>{" "}
-                        <Badge variant="secondary">{t("year.will_graduate")}</Badge>
-                      </>
-                    ) : typeof next === "object" ? (
-                      <>
-                        {t(`grade.${group.grade_level}`)} <span className="text-muted-foreground">→</span>{" "}
-                        {t(`grade.${next.grade}`)}
-                      </>
-                    ) : (
-                      t(`grade.${group.grade_level}`)
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="text-xs text-muted-foreground">{group.students.length} {t("year.students")}</div>
-                    {!isGrad && anyRepeat && (
-                      <Button size="sm" variant="outline" onClick={() => markGroupPromoted(groupIds)}>
-                        {t("year.mark_all_promoted")}
-                      </Button>
-                    )}
-                  </div>
-                </div>
+        <>
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t("common.search") ?? "Search"}
+                className="pl-8"
+              />
+            </div>
+            <Select
+              value={stageFilter}
+              onValueChange={(v) => { setStageFilter(v); setGradeFilter("all"); }}
+            >
+              <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("common.all") ?? "All stages"}</SelectItem>
+                {availableStages.map((s) => (
+                  <SelectItem key={s} value={s}>{t(`stage.${s}`)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={gradeFilter} onValueChange={setGradeFilter}>
+              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("common.all") ?? "All grades"}</SelectItem>
+                {availableGrades.map((g) => (
+                  <SelectItem key={g} value={g}>{t(`grade.${g}`)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {filteredRoster.length === 0 ? (
+            <EmptyState text={t("common.empty")} />
+          ) : (
+            <div className="space-y-6">
+              {filteredRoster.map((group) => {
+                const isGrad = NEXT[group.grade_level] === "graduate";
+                const next = NEXT[group.grade_level];
+                return (
+                  <div key={`${group.stage_group}|${group.grade_level}`} className="rounded-lg border">
+                    <div className="p-3 border-b flex items-center justify-between gap-2 flex-wrap">
+                      <div className="font-serif text-lg">
+                        {isGrad ? (
+                          <>
+                            {t(`grade.${group.grade_level}`)} <span className="text-muted-foreground">→</span>{" "}
+                            <Badge variant="secondary">{t("year.will_graduate")}</Badge>
+                          </>
+                        ) : typeof next === "object" ? (
+                          <>
+                            {t(`grade.${group.grade_level}`)} <span className="text-muted-foreground">→</span>{" "}
+                            {t(`grade.${next.grade}`)}
+                          </>
+                        ) : (
+                          t(`grade.${group.grade_level}`)
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground">{group.students.length} {t("year.students")}</div>
+                    </div>
                 <div className="divide-y">
                   {group.students.map((s) => (
                     <div key={s.user_id} className="p-3 flex items-center justify-between">
@@ -197,7 +242,9 @@ function Page() {
               </div>
             );
           })}
-        </div>
+            </div>
+          )}
+        </>
       )}
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
