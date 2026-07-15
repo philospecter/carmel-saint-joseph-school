@@ -155,7 +155,7 @@ function GraduatesPanel({ yearId, yearLabel }: { yearId: string; yearLabel: stri
         .eq("is_graduated", true as never)).data ?? [],
   });
 
-  function exportRows(fmt: "csv" | "xlsx") {
+  function exportRows(fmt: "csv" | "xlsx" | "pdf") {
     const rows: Row[] = (grads ?? []).map((s: any) => ({
       name: s.profiles?.full_name ?? "",
       national_id: s.profiles?.national_id ?? "",
@@ -165,7 +165,9 @@ function GraduatesPanel({ yearId, yearLabel }: { yearId: string; yearLabel: stri
       grade: t(`grade.${s.grade_level}`),
     }));
     const base = `graduates_${yearLabel}`;
-    fmt === "csv" ? downloadCSV(`${base}.csv`, rows) : downloadXLSX(`${base}.xlsx`, rows, "Graduates");
+    if (fmt === "csv") downloadCSV(`${base}.csv`, rows);
+    else if (fmt === "xlsx") downloadXLSX(`${base}.xlsx`, rows, "Graduates");
+    else downloadPDF(`${base}.pdf`, `Graduates — ${yearLabel}`, rows);
   }
 
   if (isLoading) return <EmptyState text={t("common.loading")} />;
