@@ -55,14 +55,19 @@ function Page() {
   const [grade, setGrade] = useState<string>("all");
   const [q, setQ] = useState("");
 
+  const { data: currentYearId } = useCurrentYearId();
   const { data, isLoading } = useQuery<UserRow[]>({
-    queryKey: ["admin-users"],
-    enabled: isAdmin,
+    queryKey: ["admin-users", currentYearId ?? ""],
+    enabled: isAdmin && !!currentYearId,
     queryFn: async () => {
       const [profiles, roles, enrolls, sms] = await Promise.all([
         supabase.from("profiles").select("id, full_name, national_id, mobile, email, address, status").order("full_name"),
         supabase.from("user_roles").select("user_id, role"),
-        supabase.from("student_enrollments").select("user_id, stage_group, grade_level"),
+        supabase
+          .from("student_enrollments")
+          .select("user_id, stage_group, grade_level")
+          .eq("is_graduated", false)
+          .eq("academic_year_id", currentYearId as never),
         supabase.from("stage_manager_assignments").select("user_id, stage_group"),
       ]);
       const rolesByUser = new Map<string, Role[]>();
