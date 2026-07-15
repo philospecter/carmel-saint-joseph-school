@@ -20,30 +20,45 @@ export const listSubjectsAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context.supabase as never, context.userId);
-    const { data: subjects, error } = await (context.supabase as any)
+    const supabase = context.supabase as any;
+    const { data: subjects, error } = await supabase
       .from("subjects")
       .select("id, name, stage_group, grade_level")
       .order("stage_group")
       .order("grade_level")
       .order("name");
     if (error) throw new Error(error.message);
-
     const rows = (subjects ?? []) as Array<{ id: string; name: string; stage_group: string; grade_level: string }>;
-    const counts = await Promise.all(
-      rows.map(async (s) => {
-        const { data, error: e } = await (context.supabase as any).rpc("subject_reference_counts" as never, { _subject: s.id });
-        if (e) throw new Error(e.message);
-        const r = Array.isArray(data) ? data[0] : data;
-        return {
-          teachers: Number(r?.teachers ?? 0),
-          homework: Number(r?.homework ?? 0),
-          grades: Number(r?.grades ?? 0),
-        };
-      }),
-    );
-    return rows.map((s, i) => ({ ...s, ref_counts: counts[i] }));
+    const ids = rows.map((r) => r.id);
 
+    const counts = new Map<string, { teachers: number; homework: number; grades: number }>();
+    for (const id of ids) counts.set(id, { teachers: 0, homework: 0, grades: 0 });
+
+    if (ids.length > 0) {
+      const [ta, hw, gr] = await Promise.all([
+        supabase.from("teacher_assignments").select("subject_id").in("subject_id", ids),
+        supabase.from("homework").select("teacher_assignment_id, teacher_assignments!inner(subject_id)").in("teacher_assignments.subject_id", ids),
+        supabase.from("grades").select("subject_id").in("subject_id", ids),
+      ]);
+      if (ta.error) throw new Error(ta.error.message);
+      if (gr.error) throw new Error(gr.error.message);
+      for (const r of ta.data ?? []) {
+        const c = counts.get(r.subject_id); if (c) c.teachers++;
+      }
+      for (const r of gr.data ?? []) {
+        const c = counts.get(r.subject_id); if (c) c.grades++;
+      }
+      if (!hw.error) {
+        for (const r of (hw.data ?? []) as any[]) {
+          const sid = r.teacher_assignments?.subject_id;
+          const c = sid ? counts.get(sid) : undefined; if (c) c.homework++;
+        }
+      }
+    }
+
+    return rows.map((s) => ({ ...s, ref_counts: counts.get(s.id)! }));
   });
+
 
 
 export const createSubjects = createServerFn({ method: "POST" })
