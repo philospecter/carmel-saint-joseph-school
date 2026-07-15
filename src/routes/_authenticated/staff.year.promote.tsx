@@ -170,7 +170,7 @@ function Page() {
             >
               <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{t("common.all") ?? "All stages"}</SelectItem>
+                <SelectItem value="all">All stages</SelectItem>
                 {availableStages.map((s) => (
                   <SelectItem key={s} value={s}>{t(`stage.${s}`)}</SelectItem>
                 ))}
