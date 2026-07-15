@@ -253,9 +253,21 @@ async function seedTeacher(
   console.log(`  ✓ ${gradeDef.label}: ${name} <${email}> mobile=${mobile}`);
 }
 
+async function ensureCurriculum(yearId: string) {
+  console.log("Ensuring curriculum subjects...");
+  for (const gradeDef of GRADES) {
+    for (const name of curriculumFor(gradeDef.stage)) {
+      await ensureSubject(name, gradeDef.stage, gradeDef.grade);
+    }
+  }
+  void yearId;
+}
+
 async function main() {
   const yearId = await ensureCurrentYear();
   console.log(`academic year: ${yearId}\n`);
+
+  await ensureCurriculum(yearId);
 
   let studentSeed = 0;
   let teacherSeed = 1000; // separate mobile-number space to avoid collisions
