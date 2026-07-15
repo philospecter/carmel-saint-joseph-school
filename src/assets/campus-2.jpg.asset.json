@@ -1,11 +1,11 @@
 {
-  "version": 1,
   "asset_id": "f56040f1-acfe-4b5f-ae96-31aed7632e5b",
-  "project_id": "9c733cdf-a63a-440b-80e7-cd8de38b6208",
-  "url": "/__l5e/assets-v1/f56040f1-acfe-4b5f-ae96-31aed7632e5b/campus-2.jpg",
-  "r2_key": "a/v1/9c733cdf-a63a-440b-80e7-cd8de38b6208/f56040f1-acfe-4b5f-ae96-31aed7632e5b/campus-2.jpg",
-  "original_filename": "campus-2.jpg",
-  "size": 70607,
   "content_type": "image/jpeg",
-  "created_at": "2026-07-13T13:17:06Z"
+  "created_at": "2026-07-13T13:17:06Z",
+  "original_filename": "campus-2.jpg",
+  "project_id": "847b5d67-c281-421a-a541-f51355e990b4",
+  "r2_key": "a/v1/847b5d67-c281-421a-a541-f51355e990b4/f56040f1-acfe-4b5f-ae96-31aed7632e5b/campus-2.jpg",
+  "size": 70607,
+  "url": "/__l5e/assets-v1/f56040f1-acfe-4b5f-ae96-31aed7632e5b/campus-2.jpg",
+  "version": 1
 }
