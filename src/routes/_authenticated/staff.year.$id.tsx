@@ -390,11 +390,17 @@ function GradesPanel({ yearId, yearLabel }: { yearId: string; yearLabel: string 
         <Button size="sm" variant="outline" onClick={() => exportScope("xlsx")} disabled={!cellReady}>
           <Download className="w-3 h-3 mr-1" />This selection · Excel
         </Button>
+        <Button size="sm" variant="outline" onClick={() => exportScope("pdf")} disabled={!cellReady}>
+          <Download className="w-3 h-3 mr-1" />This selection · PDF
+        </Button>
         <Button size="sm" onClick={() => exportAll("csv")}>
           <Download className="w-3 h-3 mr-1" />All school · CSV
         </Button>
         <Button size="sm" onClick={() => exportAll("xlsx")}>
           <Download className="w-3 h-3 mr-1" />All school · Excel
+        </Button>
+        <Button size="sm" onClick={() => exportAll("pdf")}>
+          <Download className="w-3 h-3 mr-1" />All school · PDF
         </Button>
       </div>
     </div>
