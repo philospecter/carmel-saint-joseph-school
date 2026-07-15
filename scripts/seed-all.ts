@@ -49,10 +49,7 @@ const GRADES: GradeDef[] = [
   { label: "Secondary 3",   grade: "sec3", stage: "secondary",   subject: "Secondary 3 Homeroom",   teacherIndex: 12 },
 ];
 
-const STUDENT_NAMES = [
-  "Student One", "Student Two", "Student Three",
-  "Student Four", "Student Five", "Student Six",
-];
+const STUDENTS_PER_GRADE = 6;
 
 // National ID base: 30606010102451, each grade uses 6 consecutive IDs starting there.
 const NID_BASE = 30606010102451n;
@@ -261,9 +258,11 @@ async function main() {
     await seedTeacher(yearId, gradeDef, teacherSeed++);
 
     console.log(" Students:");
-    for (let s = 0; s < STUDENT_NAMES.length; s++) {
-      const nid = (NID_BASE + BigInt(g * 6 + s)).toString();
-      await seedStudent(yearId, gradeDef, STUDENT_NAMES[s], nid, studentSeed++);
+    for (let s = 0; s < STUDENTS_PER_GRADE; s++) {
+      const index = g * STUDENTS_PER_GRADE + s; // 0..71
+      const nid = (NID_BASE + BigInt(index)).toString();
+      const name = `Student ${index + 1}`;
+      await seedStudent(yearId, gradeDef, name, nid, studentSeed++);
     }
   }
 
