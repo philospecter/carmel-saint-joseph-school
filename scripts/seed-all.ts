@@ -49,10 +49,7 @@ const GRADES: GradeDef[] = [
   { label: "Secondary 3",   grade: "sec3", stage: "secondary",   subject: "Secondary 3 Homeroom",   teacherIndex: 12 },
 ];
 
-const STUDENT_NAMES = [
-  "Student One", "Student Two", "Student Three",
-  "Student Four", "Student Five", "Student Six",
-];
+const STUDENTS_PER_GRADE = 6;
 
 // National ID base: 30606010102451, each grade uses 6 consecutive IDs starting there.
 const NID_BASE = 30606010102451n;
