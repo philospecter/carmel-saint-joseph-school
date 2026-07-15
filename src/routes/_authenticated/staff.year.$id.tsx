@@ -470,18 +470,22 @@ function AttendancePanel({ yearId, yearLabel }: { yearId: string; yearLabel: str
     });
   }
 
-  async function exportScope(fmt: "csv" | "xlsx") {
+  async function exportScope(fmt: "csv" | "xlsx" | "pdf") {
     try {
       const rows = await fetchScope();
       const base = `attendance_${yearLabel}_${stage}_${grade}`;
-      fmt === "csv" ? downloadCSV(`${base}.csv`, rows) : downloadXLSX(`${base}.xlsx`, rows, "Attendance");
+      if (fmt === "csv") downloadCSV(`${base}.csv`, rows);
+      else if (fmt === "xlsx") downloadXLSX(`${base}.xlsx`, rows, "Attendance");
+      else downloadPDF(`${base}.pdf`, `Attendance — ${yearLabel} · ${t(`stage.${stage}`)} · ${t(`grade.${grade}`)}`, rows);
     } catch (e) { toast.error(formatSupabaseError(e)); }
   }
-  async function exportAll(fmt: "csv" | "xlsx") {
+  async function exportAll(fmt: "csv" | "xlsx" | "pdf") {
     try {
       const rows = await fetchAllSchool();
       const base = `attendance_${yearLabel}_all_school`;
-      fmt === "csv" ? downloadCSV(`${base}.csv`, rows) : downloadXLSX(`${base}.xlsx`, rows, "Attendance");
+      if (fmt === "csv") downloadCSV(`${base}.csv`, rows);
+      else if (fmt === "xlsx") downloadXLSX(`${base}.xlsx`, rows, "Attendance");
+      else downloadPDF(`${base}.pdf`, `Attendance — ${yearLabel} · All school`, rows);
     } catch (e) { toast.error(formatSupabaseError(e)); }
   }
 
