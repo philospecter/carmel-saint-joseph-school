@@ -309,18 +309,22 @@ function GradesPanel({ yearId, yearLabel }: { yearId: string; yearLabel: string 
     });
   }
 
-  async function exportScope(fmt: "csv" | "xlsx") {
+  async function exportScope(fmt: "csv" | "xlsx" | "pdf") {
     try {
       const rows = await fetchScope();
       const base = `grades_${yearLabel}_${stage}_${grade}`;
-      fmt === "csv" ? downloadCSV(`${base}.csv`, rows) : downloadXLSX(`${base}.xlsx`, rows, "Grades");
+      if (fmt === "csv") downloadCSV(`${base}.csv`, rows);
+      else if (fmt === "xlsx") downloadXLSX(`${base}.xlsx`, rows, "Grades");
+      else downloadPDF(`${base}.pdf`, `Grades — ${yearLabel} · ${t(`stage.${stage}`)} · ${t(`grade.${grade}`)}`, rows);
     } catch (e) { toast.error(formatSupabaseError(e)); }
   }
-  async function exportAll(fmt: "csv" | "xlsx") {
+  async function exportAll(fmt: "csv" | "xlsx" | "pdf") {
     try {
       const rows = await fetchAllSchool();
       const base = `grades_${yearLabel}_all_school`;
-      fmt === "csv" ? downloadCSV(`${base}.csv`, rows) : downloadXLSX(`${base}.xlsx`, rows, "Grades");
+      if (fmt === "csv") downloadCSV(`${base}.csv`, rows);
+      else if (fmt === "xlsx") downloadXLSX(`${base}.xlsx`, rows, "Grades");
+      else downloadPDF(`${base}.pdf`, `Grades — ${yearLabel} · All school`, rows);
     } catch (e) { toast.error(formatSupabaseError(e)); }
   }
 
