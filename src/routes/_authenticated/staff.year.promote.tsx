@@ -153,39 +153,67 @@ function Page() {
       {roster.length === 0 ? (
         <EmptyState text={t("year.no_students_to_promote")} />
       ) : (
-        <div className="space-y-6">
-          {roster.map((group) => {
-            const isGrad = NEXT[group.grade_level] === "graduate";
-            const next = NEXT[group.grade_level];
-            const groupIds = group.students.map((s) => s.user_id);
-            const anyRepeat = groupIds.some((id) => repeats.has(id));
-            return (
-              <div key={`${group.stage_group}|${group.grade_level}`} className="rounded-lg border">
-                <div className="p-3 border-b flex items-center justify-between gap-2 flex-wrap">
-                  <div className="font-serif text-lg">
-                    {isGrad ? (
-                      <>
-                        {t(`grade.${group.grade_level}`)} <span className="text-muted-foreground">→</span>{" "}
-                        <Badge variant="secondary">{t("year.will_graduate")}</Badge>
-                      </>
-                    ) : typeof next === "object" ? (
-                      <>
-                        {t(`grade.${group.grade_level}`)} <span className="text-muted-foreground">→</span>{" "}
-                        {t(`grade.${next.grade}`)}
-                      </>
-                    ) : (
-                      t(`grade.${group.grade_level}`)
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="text-xs text-muted-foreground">{group.students.length} {t("year.students")}</div>
-                    {!isGrad && anyRepeat && (
-                      <Button size="sm" variant="outline" onClick={() => markGroupPromoted(groupIds)}>
-                        {t("year.mark_all_promoted")}
-                      </Button>
-                    )}
-                  </div>
-                </div>
+        <>
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t("common.search") ?? "Search"}
+                className="pl-8"
+              />
+            </div>
+            <Select
+              value={stageFilter}
+              onValueChange={(v) => { setStageFilter(v); setGradeFilter("all"); }}
+            >
+              <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("common.all") ?? "All stages"}</SelectItem>
+                {availableStages.map((s) => (
+                  <SelectItem key={s} value={s}>{t(`stage.${s}`)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={gradeFilter} onValueChange={setGradeFilter}>
+              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("common.all") ?? "All grades"}</SelectItem>
+                {availableGrades.map((g) => (
+                  <SelectItem key={g} value={g}>{t(`grade.${g}`)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {filteredRoster.length === 0 ? (
+            <EmptyState text={t("common.empty")} />
+          ) : (
+            <div className="space-y-6">
+              {filteredRoster.map((group) => {
+                const isGrad = NEXT[group.grade_level] === "graduate";
+                const next = NEXT[group.grade_level];
+                return (
+                  <div key={`${group.stage_group}|${group.grade_level}`} className="rounded-lg border">
+                    <div className="p-3 border-b flex items-center justify-between gap-2 flex-wrap">
+                      <div className="font-serif text-lg">
+                        {isGrad ? (
+                          <>
+                            {t(`grade.${group.grade_level}`)} <span className="text-muted-foreground">→</span>{" "}
+                            <Badge variant="secondary">{t("year.will_graduate")}</Badge>
+                          </>
+                        ) : typeof next === "object" ? (
+                          <>
+                            {t(`grade.${group.grade_level}`)} <span className="text-muted-foreground">→</span>{" "}
+                            {t(`grade.${next.grade}`)}
+                          </>
+                        ) : (
+                          t(`grade.${group.grade_level}`)
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground">{group.students.length} {t("year.students")}</div>
+                    </div>
                 <div className="divide-y">
                   {group.students.map((s) => (
                     <div key={s.user_id} className="p-3 flex items-center justify-between">
