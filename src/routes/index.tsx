@@ -1,57 +1,59 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { MapPin, Phone, Mail, GraduationCap, Award, Sparkles } from "lucide-react";
 
-import logoAsset from "@/assets/logo.png.asset.json";
-import heroAsset from "@/assets/hero.jpg.asset.json";
-import heritage1 from "@/assets/heritage-1.jpg.asset.json";
-import heritage2 from "@/assets/heritage-2.jpg.asset.json";
-import heritage3 from "@/assets/heritage-3.jpg.asset.json";
-import heritage4 from "@/assets/heritage-4.jpg.asset.json";
-import campus1 from "@/assets/campus-1.jpg.asset.json";
-import campus2 from "@/assets/campus-2.jpg.asset.json";
-import campus3 from "@/assets/campus-3.jpg.asset.json";
-import campus4 from "@/assets/campus-4.jpg.asset.json";
-import campus5 from "@/assets/campus-5.jpg.asset.json";
-import campus6 from "@/assets/campus-6.jpg.asset.json";
-import campus7 from "@/assets/campus-7.jpg.asset.json";
-import campus8 from "@/assets/campus-8.jpg.asset.json";
-import label1 from "@/assets/label-1.jpg.asset.json";
-import label2 from "@/assets/label-2.jpg.asset.json";
-import label3 from "@/assets/label-3.jpg.asset.json";
-import label4 from "@/assets/label-4.jpg.asset.json";
-import label5 from "@/assets/label-5.jpg.asset.json";
-import label6 from "@/assets/label-6.jpg.asset.json";
-import labelBadge from "@/assets/label-badge.jpg.asset.json";
+
+import logoAsset from "@/assets/logo.png";
+import heroAsset from "@/assets/hero.jpg";
+import heritage1 from "@/assets/heritage-1.jpg";
+import heritage2 from "@/assets/heritage-2.jpg";
+import heritage3 from "@/assets/heritage-3.jpg";
+import heritage4 from "@/assets/heritage-4.jpg";
+import campus1 from "@/assets/campus-1.jpg";
+import campus2 from "@/assets/campus-2.jpg";
+import campus3 from "@/assets/campus-3.jpg";
+import campus4 from "@/assets/campus-4.jpg";
+import campus5 from "@/assets/campus-5.jpg";
+import campus6 from "@/assets/campus-6.jpg";
+import campus7 from "@/assets/campus-7.jpg";
+import campus8 from "@/assets/campus-8.jpg";
+import label1 from "@/assets/label-1.jpg";
+import label2 from "@/assets/label-2.jpg";
+import label3 from "@/assets/label-3.jpg";
+import label4 from "@/assets/label-4.jpg";
+import label5 from "@/assets/label-5.jpg";
+import label6 from "@/assets/label-6.jpg";
+import labelBadge from "@/assets/label-badge.jpg";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
+
 const heritagePhotos = [
-  { src: heritage1.url, alt: "Campus life at Carmel Saint Joseph" },
-  { src: heritage2.url, alt: "Students and sisters in the historic school courtyard" },
-  { src: heritage4.url, alt: "The school building framed by a flame tree in bloom" },
-  { src: heritage3.url, alt: "Students playing volleyball in the school courtyard" },
-  { src: campus7.url, alt: "Students visiting an elderly community member during a service outing" },
-  { src: campus8.url, alt: "Students with the tiger mascot holding cat masks outside the school" },
+  { src: heritage1, alt: "Campus life at Carmel Saint Joseph" },
+  { src: heritage2, alt: "Students and sisters in the historic school courtyard" },
+  { src: heritage4, alt: "The school building framed by a flame tree in bloom" },
+  { src: heritage3, alt: "Students playing volleyball in the school courtyard" },
+  { src: campus7, alt: "Students visiting an elderly community member during a service outing" },
+  { src: campus8, alt: "Students with the tiger mascot holding cat masks outside the school" },
 ];
 
 const schoolLifePhotos = [
-  { src: campus1.url, alt: "Students receiving certificates in traditional dress" },
-  { src: campus3.url, alt: "Students gathered in the school courtyard" },
-  { src: campus4.url, alt: "Students and teachers celebrating together outdoors" },
-  { src: campus2.url, alt: "Students at the Concours Livres reading competition" },
-  { src: campus5.url, alt: "Award ceremony with students and teachers in the classroom" },
-  { src: campus6.url, alt: "Evening gathering of students under the school arches" },
+  { src: campus1, alt: "Students receiving certificates in traditional dress" },
+  { src: campus3, alt: "Students gathered in the school courtyard" },
+  { src: campus4, alt: "Students and teachers celebrating together outdoors" },
+  { src: campus2, alt: "Students at the Concours Livres reading competition" },
+  { src: campus5, alt: "Award ceremony with students and teachers in the classroom" },
+  { src: campus6, alt: "Evening gathering of students under the school arches" },
 ];
 
 const labelPhotos = [
-  { src: label4.url, alt: "Carmelite sisters and staff receiving the French Quality Label certificates" },
-  { src: label1.url, alt: "Sisters and delegates presenting the LabelFrancÉducation certificate" },
-  { src: label2.url, alt: "Teachers and sisters gathered in the courtyard with the certificate" },
-  { src: label3.url, alt: "Sisters proudly holding the LabelFrancÉducation award" },
-  { src: label5.url, alt: "Official LabelFrancÉducation ceremony on stage" },
-  { src: label6.url, alt: "School community celebrating the French Quality Label award" },
+  { src: label4, alt: "Carmelite sisters and staff receiving the French Quality Label certificates" },
+  { src: label1, alt: "Sisters and delegates presenting the LabelFrancÉducation certificate" },
+  { src: label2, alt: "Teachers and sisters gathered in the courtyard with the certificate" },
+  { src: label3, alt: "Sisters proudly holding the LabelFrancÉducation award" },
+  { src: label5, alt: "Official LabelFrancÉducation ceremony on stage" },
+  { src: label6, alt: "School community celebrating the French Quality Label award" },
 ];
 
 function Index() {
@@ -75,7 +77,7 @@ function Header() {
       <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3 sm:flex sm:justify-between sm:px-6">
         <a href="#" className="flex min-w-0 items-center gap-3">
           <img
-            src={logoAsset.url}
+            src={logoAsset}
             alt="Carmel Saint Joseph logo"
             className="h-11 w-auto shrink-0"
           />
@@ -123,14 +125,14 @@ function Hero() {
   return (
     <section className="relative flex min-h-[88svh] items-center justify-center overflow-hidden">
       <img
-        src={heroAsset.url}
+        src={heroAsset}
         alt="Students and sisters of Carmel Saint Joseph gathered in the school courtyard"
         className="absolute inset-0 h-full w-full object-cover"
       />
       <div className="hero-overlay absolute inset-0" />
       <div className="relative z-10 mx-auto max-w-3xl px-6 py-24 text-center text-primary-foreground">
         <div className="mx-auto mb-8 grid h-28 w-28 place-items-center rounded-full bg-background shadow-lg">
-          <img src={logoAsset.url} alt="" className="h-20 w-auto" />
+          <img src={logoAsset} alt="" className="h-20 w-auto" />
         </div>
         <h1 className="heading-display text-5xl leading-tight sm:text-6xl md:text-7xl">
           Carmel Saint Joseph
@@ -253,7 +255,7 @@ function FrenchQualityLabel() {
           <div className="mx-auto">
             <div className="grid h-44 w-44 place-items-center overflow-hidden rounded-full border-4 border-french-blue/20 bg-card shadow-lg sm:h-52 sm:w-52">
               <img
-                src={labelBadge.url}
+                src={labelBadge}
                 alt="LabelFrancÉducation official badge"
                 className="h-full w-full object-cover"
               />
@@ -329,7 +331,7 @@ function Footer() {
           </div>
           <div className="flex flex-col items-start gap-4 md:items-end md:text-right">
             <div className="grid h-20 w-20 place-items-center rounded-full bg-background">
-              <img src={logoAsset.url} alt="Carmel Saint Joseph logo" className="h-14 w-auto" />
+              <img src={logoAsset} alt="Carmel Saint Joseph logo" className="h-14 w-auto" />
             </div>
             <p className="heading-display text-xl">Carmel Saint Joseph</p>
             <p className="max-w-xs text-sm leading-relaxed opacity-80">
