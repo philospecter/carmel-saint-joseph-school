@@ -258,9 +258,11 @@ async function main() {
     await seedTeacher(yearId, gradeDef, teacherSeed++);
 
     console.log(" Students:");
-    for (let s = 0; s < STUDENT_NAMES.length; s++) {
-      const nid = (NID_BASE + BigInt(g * 6 + s)).toString();
-      await seedStudent(yearId, gradeDef, STUDENT_NAMES[s], nid, studentSeed++);
+    for (let s = 0; s < STUDENTS_PER_GRADE; s++) {
+      const index = g * STUDENTS_PER_GRADE + s; // 0..71
+      const nid = (NID_BASE + BigInt(index)).toString();
+      const name = `Student ${index + 1}`;
+      await seedStudent(yearId, gradeDef, name, nid, studentSeed++);
     }
   }
 
