@@ -17,6 +17,7 @@ import { Pencil, Lock } from "lucide-react";
 import { formatSupabaseError } from "@/lib/errors";
 import { listTermMonths } from "@/lib/settings.functions";
 import { listGradesForCell, getGradeCellMax, clearGradeCell, type GradeCellRow } from "@/lib/grades.functions";
+import { useCurrentYearId, resolveRosterYear } from "@/lib/rosters";
 
 export const Route = createFileRoute("/_authenticated/staff/grades")({
   validateSearch: (search: Record<string, unknown>): { year?: string } => ({
