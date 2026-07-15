@@ -138,10 +138,7 @@ function Page() {
     <Section
       title={t("year.promote_title")}
       action={
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={promoteEntireSchool}>{t("year.promote_entire_school")}</Button>
-          <Button onClick={() => { setPassword(""); setConfirmOpen(true); }}>{t("year.confirm_and_start")}</Button>
-        </div>
+        <Button onClick={() => { setPassword(""); setConfirmOpen(true); }}>{t("year.confirm_and_start")}</Button>
       }
     >
       <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm mb-4 flex gap-2">
