@@ -179,7 +179,7 @@ function Page() {
             <Select value={gradeFilter} onValueChange={setGradeFilter}>
               <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{t("common.all") ?? "All grades"}</SelectItem>
+                <SelectItem value="all">All grades</SelectItem>
                 {availableGrades.map((g) => (
                   <SelectItem key={g} value={g}>{t(`grade.${g}`)}</SelectItem>
                 ))}
