@@ -152,10 +152,13 @@ export const getStaffDashboardStats = createServerFn({ method: "GET" })
     const uniqueSubjects = Array.from(new Map(scopedAssignSubjects.map((s) => [s.id, s])).values());
     const sessionsPending = await Promise.all(
       uniqueSubjects.map(async (s) => {
-        const { count } = await sb
+        let cntQ = sb
           .from("grades")
           .select("id", { count: "exact", head: true })
           .eq("subject_id", s.id);
+        if (currentYearId) cntQ = cntQ.eq("academic_year_id", currentYearId);
+        const { count } = await cntQ;
+
         return (count ?? 0) === 0
           ? { subject_id: s.id, subject_name: s.name, stage_group: s.stage_group, grade_level: s.grade_level }
           : null;
