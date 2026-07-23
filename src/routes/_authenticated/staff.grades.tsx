@@ -13,10 +13,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Pencil, Lock } from "lucide-react";
+import { Pencil, Lock, Check } from "lucide-react";
 import { formatSupabaseError } from "@/lib/errors";
 import { listTermMonths } from "@/lib/settings.functions";
-import { listGradesForCell, getGradeCellMax, clearGradeCell, type GradeCellRow } from "@/lib/grades.functions";
+import { listGradesForCell, getGradeCellMax, clearGradeCell, approveGrades, type GradeCellRow } from "@/lib/grades.functions";
 import { useCurrentYearId, resolveRosterYear } from "@/lib/rosters";
 
 export const Route = createFileRoute("/_authenticated/staff/grades")({
@@ -156,11 +156,31 @@ function Page() {
     onError: (e) => toast.error(formatSupabaseError(e)),
   });
 
+  const approveFn = useServerFn(approveGrades);
+  const approveM = useMutation({
+    mutationFn: (ids: string[]) => approveFn({ data: { ids } }),
+    onSuccess: (r) => {
+      toast.success(`Approved ${r.approved} grade(s)`);
+      qc.invalidateQueries({ queryKey: gradesKey });
+    },
+    onError: (e) => toast.error(formatSupabaseError(e)),
+  });
+  const pendingIds = (cellGrades ?? []).filter((g) => !g.approved_at).map((g) => g.id);
+  const canApprove = isAdmin && !readOnly && pendingIds.length > 0;
+
   return (
     <Section title={t("nav.grades")}>
       {readOnly && (
         <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm mb-4">
           {t("year.viewing_past_readonly")}
+        </div>
+      )}
+      {canApprove && (
+        <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm mb-4 flex items-center justify-between gap-3">
+          <span>{pendingIds.length} grade(s) pending approval — students cannot see them yet.</span>
+          <Button size="sm" onClick={() => approveM.mutate(pendingIds)} disabled={approveM.isPending}>
+            <Check className="h-3.5 w-3.5 mr-1" /> Approve all
+          </Button>
         </div>
       )}
       <div className="flex flex-wrap gap-2 mb-4 items-end">
@@ -250,6 +270,8 @@ function Page() {
                 enteredById={me?.userId ?? ""}
                 showAudit={isAdmin}
                 readOnly={readOnly}
+                isAdmin={isAdmin}
+                onApprove={(id) => approveM.mutate([id])}
                 onSaved={() => {
                   qc.invalidateQueries({ queryKey: gradesKey });
                   qc.invalidateQueries({ queryKey: maxKey });
@@ -288,7 +310,7 @@ function Page() {
 
 
 function GradeRow({
-  studentId, studentName, existing, subjectId, term, month, sessionMax, enteredById, showAudit, readOnly, onSaved,
+  studentId, studentName, existing, subjectId, term, month, sessionMax, enteredById, showAudit, readOnly, isAdmin, onApprove, onSaved,
 }: {
   studentId: string;
   studentName: string;
@@ -300,6 +322,8 @@ function GradeRow({
   enteredById: string;
   showAudit: boolean;
   readOnly?: boolean;
+  isAdmin?: boolean;
+  onApprove?: (id: string) => void;
   onSaved: () => void;
 }) {
   const { t } = useI18n();
@@ -354,6 +378,9 @@ function GradeRow({
     <div className="p-3 flex items-center justify-between gap-3">
       <div className="min-w-0 flex-1">
         <div className="truncate">{studentName}</div>
+        {existing && !existing.approved_at && (
+          <Badge variant="outline" className="text-xs mt-0.5 border-amber-500/50 text-amber-600">Pending approval</Badge>
+        )}
         {showAudit && existing && (
           <div className="text-xs text-muted-foreground mt-0.5">
             {existing.entered_by_name
@@ -374,6 +401,11 @@ function GradeRow({
             >
               {existing.score}/{rowMax}
             </Badge>
+            {isAdmin && !existing.approved_at && !readOnly && onApprove && (
+              <Button size="sm" variant="outline" onClick={() => onApprove(existing.id)}>
+                <Check className="h-3 w-3 mr-1" />Approve
+              </Button>
+            )}
             {!readOnly && (
               <Button size="sm" variant="outline" onClick={() => setUnlocked(true)}>
                 <Pencil className="h-3 w-3 mr-1" />{t("grades.edit")}

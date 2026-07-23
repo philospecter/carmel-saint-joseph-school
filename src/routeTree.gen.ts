@@ -19,6 +19,7 @@ import { Route as AuthenticatedStaffRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedTeacherIndexRouteImport } from './routes/_authenticated/teacher.index'
 import { Route as AuthenticatedStudentIndexRouteImport } from './routes/_authenticated/student.index'
 import { Route as AuthenticatedStaffIndexRouteImport } from './routes/_authenticated/staff.index'
+import { Route as AuthenticatedTeacherGradesRouteImport } from './routes/_authenticated/teacher.grades'
 import { Route as AuthenticatedTeacherBanksRouteImport } from './routes/_authenticated/teacher.banks'
 import { Route as AuthenticatedStudentSubjectsRouteImport } from './routes/_authenticated/student.subjects'
 import { Route as AuthenticatedStudentGradesRouteImport } from './routes/_authenticated/student.grades'
@@ -94,6 +95,12 @@ const AuthenticatedStaffIndexRoute = AuthenticatedStaffIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedStaffRoute,
 } as any)
+const AuthenticatedTeacherGradesRoute =
+  AuthenticatedTeacherGradesRouteImport.update({
+    id: '/grades',
+    path: '/grades',
+    getParentRoute: () => AuthenticatedTeacherRoute,
+  } as any)
 const AuthenticatedTeacherBanksRoute =
   AuthenticatedTeacherBanksRouteImport.update({
     id: '/banks',
@@ -254,6 +261,7 @@ export interface FileRoutesByFullPath {
   '/student/grades': typeof AuthenticatedStudentGradesRoute
   '/student/subjects': typeof AuthenticatedStudentSubjectsRouteWithChildren
   '/teacher/banks': typeof AuthenticatedTeacherBanksRoute
+  '/teacher/grades': typeof AuthenticatedTeacherGradesRoute
   '/staff/': typeof AuthenticatedStaffIndexRoute
   '/student/': typeof AuthenticatedStudentIndexRoute
   '/teacher/': typeof AuthenticatedTeacherIndexRoute
@@ -284,6 +292,7 @@ export interface FileRoutesByTo {
   '/student/attendance': typeof AuthenticatedStudentAttendanceRoute
   '/student/grades': typeof AuthenticatedStudentGradesRoute
   '/teacher/banks': typeof AuthenticatedTeacherBanksRoute
+  '/teacher/grades': typeof AuthenticatedTeacherGradesRoute
   '/staff': typeof AuthenticatedStaffIndexRoute
   '/student': typeof AuthenticatedStudentIndexRoute
   '/teacher': typeof AuthenticatedTeacherIndexRoute
@@ -320,6 +329,7 @@ export interface FileRoutesById {
   '/_authenticated/student/grades': typeof AuthenticatedStudentGradesRoute
   '/_authenticated/student/subjects': typeof AuthenticatedStudentSubjectsRouteWithChildren
   '/_authenticated/teacher/banks': typeof AuthenticatedTeacherBanksRoute
+  '/_authenticated/teacher/grades': typeof AuthenticatedTeacherGradesRoute
   '/_authenticated/staff/': typeof AuthenticatedStaffIndexRoute
   '/_authenticated/student/': typeof AuthenticatedStudentIndexRoute
   '/_authenticated/teacher/': typeof AuthenticatedTeacherIndexRoute
@@ -356,6 +366,7 @@ export interface FileRouteTypes {
     | '/student/grades'
     | '/student/subjects'
     | '/teacher/banks'
+    | '/teacher/grades'
     | '/staff/'
     | '/student/'
     | '/teacher/'
@@ -386,6 +397,7 @@ export interface FileRouteTypes {
     | '/student/attendance'
     | '/student/grades'
     | '/teacher/banks'
+    | '/teacher/grades'
     | '/staff'
     | '/student'
     | '/teacher'
@@ -421,6 +433,7 @@ export interface FileRouteTypes {
     | '/_authenticated/student/grades'
     | '/_authenticated/student/subjects'
     | '/_authenticated/teacher/banks'
+    | '/_authenticated/teacher/grades'
     | '/_authenticated/staff/'
     | '/_authenticated/student/'
     | '/_authenticated/teacher/'
@@ -512,6 +525,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/staff/'
       preLoaderRoute: typeof AuthenticatedStaffIndexRouteImport
       parentRoute: typeof AuthenticatedStaffRoute
+    }
+    '/_authenticated/teacher/grades': {
+      id: '/_authenticated/teacher/grades'
+      path: '/grades'
+      fullPath: '/teacher/grades'
+      preLoaderRoute: typeof AuthenticatedTeacherGradesRouteImport
+      parentRoute: typeof AuthenticatedTeacherRoute
     }
     '/_authenticated/teacher/banks': {
       id: '/_authenticated/teacher/banks'
@@ -756,6 +776,7 @@ const AuthenticatedStudentRouteWithChildren =
 
 interface AuthenticatedTeacherRouteChildren {
   AuthenticatedTeacherBanksRoute: typeof AuthenticatedTeacherBanksRoute
+  AuthenticatedTeacherGradesRoute: typeof AuthenticatedTeacherGradesRoute
   AuthenticatedTeacherIndexRoute: typeof AuthenticatedTeacherIndexRoute
   AuthenticatedTeacherHomeworkIdRoute: typeof AuthenticatedTeacherHomeworkIdRoute
   AuthenticatedTeacherSubjectIdRoute: typeof AuthenticatedTeacherSubjectIdRoute
@@ -763,6 +784,7 @@ interface AuthenticatedTeacherRouteChildren {
 
 const AuthenticatedTeacherRouteChildren: AuthenticatedTeacherRouteChildren = {
   AuthenticatedTeacherBanksRoute: AuthenticatedTeacherBanksRoute,
+  AuthenticatedTeacherGradesRoute: AuthenticatedTeacherGradesRoute,
   AuthenticatedTeacherIndexRoute: AuthenticatedTeacherIndexRoute,
   AuthenticatedTeacherHomeworkIdRoute: AuthenticatedTeacherHomeworkIdRoute,
   AuthenticatedTeacherSubjectIdRoute: AuthenticatedTeacherSubjectIdRoute,
@@ -795,13 +817,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -136,6 +136,8 @@ export type Database = {
       grades: {
         Row: {
           academic_year_id: string
+          approved_at: string | null
+          approved_by: string | null
           committed_at: string
           entered_by: string | null
           id: string
@@ -149,6 +151,8 @@ export type Database = {
         }
         Insert: {
           academic_year_id?: string
+          approved_at?: string | null
+          approved_by?: string | null
           committed_at?: string
           entered_by?: string | null
           id?: string
@@ -162,6 +166,8 @@ export type Database = {
         }
         Update: {
           academic_year_id?: string
+          approved_at?: string | null
+          approved_by?: string | null
           committed_at?: string
           entered_by?: string | null
           id?: string
@@ -710,6 +716,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_grades: { Args: { _ids: string[] }; Returns: number }
       current_academic_year_id: { Args: never; Returns: string }
       delete_academic_year: { Args: { _year: string }; Returns: undefined }
       has_role: {
