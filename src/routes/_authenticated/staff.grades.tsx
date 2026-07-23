@@ -310,7 +310,7 @@ function Page() {
 
 
 function GradeRow({
-  studentId, studentName, existing, subjectId, term, month, sessionMax, enteredById, showAudit, readOnly, onSaved,
+  studentId, studentName, existing, subjectId, term, month, sessionMax, enteredById, showAudit, readOnly, isAdmin, onApprove, onSaved,
 }: {
   studentId: string;
   studentName: string;
@@ -322,6 +322,8 @@ function GradeRow({
   enteredById: string;
   showAudit: boolean;
   readOnly?: boolean;
+  isAdmin?: boolean;
+  onApprove?: (id: string) => void;
   onSaved: () => void;
 }) {
   const { t } = useI18n();
@@ -376,6 +378,9 @@ function GradeRow({
     <div className="p-3 flex items-center justify-between gap-3">
       <div className="min-w-0 flex-1">
         <div className="truncate">{studentName}</div>
+        {existing && !existing.approved_at && (
+          <Badge variant="outline" className="text-xs mt-0.5 border-amber-500/50 text-amber-600">Pending approval</Badge>
+        )}
         {showAudit && existing && (
           <div className="text-xs text-muted-foreground mt-0.5">
             {existing.entered_by_name
@@ -396,6 +401,11 @@ function GradeRow({
             >
               {existing.score}/{rowMax}
             </Badge>
+            {isAdmin && !existing.approved_at && !readOnly && onApprove && (
+              <Button size="sm" variant="outline" onClick={() => onApprove(existing.id)}>
+                <Check className="h-3 w-3 mr-1" />Approve
+              </Button>
+            )}
             {!readOnly && (
               <Button size="sm" variant="outline" onClick={() => setUnlocked(true)}>
                 <Pencil className="h-3 w-3 mr-1" />{t("grades.edit")}
