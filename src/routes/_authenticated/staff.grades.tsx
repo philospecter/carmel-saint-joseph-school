@@ -13,10 +13,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Pencil, Lock } from "lucide-react";
+import { Pencil, Lock, Check } from "lucide-react";
 import { formatSupabaseError } from "@/lib/errors";
 import { listTermMonths } from "@/lib/settings.functions";
-import { listGradesForCell, getGradeCellMax, clearGradeCell, type GradeCellRow } from "@/lib/grades.functions";
+import { listGradesForCell, getGradeCellMax, clearGradeCell, approveGrades, type GradeCellRow } from "@/lib/grades.functions";
 import { useCurrentYearId, resolveRosterYear } from "@/lib/rosters";
 
 export const Route = createFileRoute("/_authenticated/staff/grades")({
