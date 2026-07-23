@@ -10,6 +10,7 @@ export const studentNav: NavItem[] = [
 
 export const teacherNav: NavItem[] = [
   { to: "/teacher", labelKey: "nav.subjects" },
+  { to: "/teacher/grades", labelKey: "nav.grades" },
   { to: "/teacher/banks", labelKey: "nav.question_banks" },
 ];
 
