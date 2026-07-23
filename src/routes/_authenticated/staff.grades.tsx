@@ -156,11 +156,31 @@ function Page() {
     onError: (e) => toast.error(formatSupabaseError(e)),
   });
 
+  const approveFn = useServerFn(approveGrades);
+  const approveM = useMutation({
+    mutationFn: (ids: string[]) => approveFn({ data: { ids } }),
+    onSuccess: (r) => {
+      toast.success(`Approved ${r.approved} grade(s)`);
+      qc.invalidateQueries({ queryKey: gradesKey });
+    },
+    onError: (e) => toast.error(formatSupabaseError(e)),
+  });
+  const pendingIds = (cellGrades ?? []).filter((g) => !g.approved_at).map((g) => g.id);
+  const canApprove = isAdmin && !readOnly && pendingIds.length > 0;
+
   return (
     <Section title={t("nav.grades")}>
       {readOnly && (
         <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm mb-4">
           {t("year.viewing_past_readonly")}
+        </div>
+      )}
+      {canApprove && (
+        <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm mb-4 flex items-center justify-between gap-3">
+          <span>{pendingIds.length} grade(s) pending approval — students cannot see them yet.</span>
+          <Button size="sm" onClick={() => approveM.mutate(pendingIds)} disabled={approveM.isPending}>
+            <Check className="h-3.5 w-3.5 mr-1" /> Approve all
+          </Button>
         </div>
       )}
       <div className="flex flex-wrap gap-2 mb-4 items-end">
@@ -250,6 +270,8 @@ function Page() {
                 enteredById={me?.userId ?? ""}
                 showAudit={isAdmin}
                 readOnly={readOnly}
+                isAdmin={isAdmin}
+                onApprove={(id) => approveM.mutate([id])}
                 onSaved={() => {
                   qc.invalidateQueries({ queryKey: gradesKey });
                   qc.invalidateQueries({ queryKey: maxKey });
