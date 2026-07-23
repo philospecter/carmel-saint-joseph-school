@@ -13,6 +13,8 @@ export type GradeCellRow = {
   committed_at: string;
   updated_at: string;
   entered_by_name: string | null;
+  approved_at: string | null;
+  approved_by: string | null;
 };
 
 /**
@@ -25,7 +27,7 @@ export const listGradesForCell = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<GradeCellRow[]> => {
     let q = (context.supabase as any)
       .from("grades")
-      .select("id, student_id, subject_id, term, month, score, max_score, entered_by, committed_at, updated_at")
+      .select("id, student_id, subject_id, term, month, score, max_score, entered_by, committed_at, updated_at, approved_at, approved_by")
       .eq("subject_id", data.subject_id)
       .eq("term", data.term);
     if (data.month === null) q = q.is("month", null);
@@ -45,6 +47,20 @@ export const listGradesForCell = createServerFn({ method: "POST" })
       names = new Map((profs ?? []).map((p: { id: string; full_name: string }) => [p.id, p.full_name]));
     }
     return grades.map((g) => ({ ...g, entered_by_name: g.entered_by ? names.get(g.entered_by) ?? null : null }));
+  });
+
+/**
+ * Bulk-approve grade rows (admin only, enforced by the RPC).
+ */
+export const approveGrades = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { ids: string[] }) => input)
+  .handler(async ({ data, context }): Promise<{ approved: number }> => {
+    const { data: affected, error } = await (context.supabase as any).rpc("approve_grades", {
+      _ids: data.ids,
+    });
+    if (error) throw new Error(error.message);
+    return { approved: Number(affected ?? 0) };
   });
 
 export const getGradeCellMax = createServerFn({ method: "POST" })
