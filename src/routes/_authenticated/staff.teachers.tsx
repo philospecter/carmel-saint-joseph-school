@@ -14,6 +14,10 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { formatSupabaseError } from "@/lib/errors";
 import { createStaffAccount, assignTeacherSubject, removeTeacherSubject } from "@/lib/auth.functions";
+import { useServerFn } from "@tanstack/react-start";
+import { getTeacherActivity } from "@/lib/teacher-activity.functions";
+import { Badge } from "@/components/ui/badge";
+import { Activity } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/staff/teachers")({ component: Page });
 
@@ -114,9 +118,12 @@ function TeacherCard({ teacher }: { teacher: { id: string; full_name: string; em
   return (
     <Card>
       <CardHeader className="pb-2">
-        <div>
-          <CardTitle className="text-base">{teacher.full_name}</CardTitle>
-          <div className="text-xs text-muted-foreground">{teacher.email} · {teacher.mobile}</div>
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <CardTitle className="text-base">{teacher.full_name}</CardTitle>
+            <div className="text-xs text-muted-foreground">{teacher.email} · {teacher.mobile}</div>
+          </div>
+          {isAdmin && <TeacherActivityDialog teacherId={teacher.id} teacherName={teacher.full_name} />}
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -156,5 +163,93 @@ function TeacherCard({ teacher }: { teacher: { id: string; full_name: string; em
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function TeacherActivityDialog({ teacherId, teacherName }: { teacherId: string; teacherName: string }) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const fetchActivity = useServerFn(getTeacherActivity);
+  const { data, isLoading } = useQuery({
+    queryKey: ["teacher-activity", teacherId],
+    enabled: open,
+    queryFn: () => fetchActivity({ data: { teacher_id: teacherId } }),
+  });
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline">
+          <Activity className="h-3.5 w-3.5 mr-1" />
+          View activity
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{teacherName} — activity this year</DialogTitle>
+        </DialogHeader>
+        {isLoading ? (
+          <div className="text-sm text-muted-foreground">Loading…</div>
+        ) : !data ? (
+          <div className="text-sm text-muted-foreground">No data.</div>
+        ) : (
+          <div className="space-y-5">
+            <div>
+              <div className="text-sm font-medium mb-2">Assignments ({data.assignments.length})</div>
+              {data.assignments.length === 0 ? (
+                <div className="text-xs text-muted-foreground">No subjects assigned this year.</div>
+              ) : (
+                <div className="rounded-md border divide-y">
+                  {data.assignments.map((a) => (
+                    <div key={a.id} className="p-2 text-sm flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="truncate">{a.subject_name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {t(`stage.${a.stage_group}`)} · {t(`grade.${a.grade_level}`)}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge variant="secondary" className="text-xs">HW {a.homework_count}</Badge>
+                        <Badge variant="secondary" className="text-xs">Grades {a.grades_entered}</Badge>
+                        {a.grades_pending > 0 && (
+                          <Badge variant="outline" className="text-xs border-amber-500/50 text-amber-600">
+                            {a.grades_pending} pending
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div>
+              <div className="text-sm font-medium mb-2">Homework ({data.homework.length})</div>
+              {data.homework.length === 0 ? (
+                <div className="text-xs text-muted-foreground">No homework given this year.</div>
+              ) : (
+                <div className="rounded-md border divide-y">
+                  {data.homework.map((h) => (
+                    <div key={h.id} className="p-2 text-sm flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="truncate">{h.title}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {h.subject_name} · {t(`grade.${h.grade_level}`)} ·{" "}
+                          {new Date(h.created_at).toLocaleDateString()}
+                          {h.due_at ? ` · due ${new Date(h.due_at).toLocaleDateString()}` : ""}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge variant="outline" className="text-xs">{h.kind}</Badge>
+                        <Badge variant="secondary" className="text-xs">{h.submission_count} sub</Badge>
+                        {h.locked && <Badge variant="outline" className="text-xs">Locked</Badge>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
