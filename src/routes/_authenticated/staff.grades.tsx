@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { Pencil, Lock, Check } from "lucide-react";
 import { formatSupabaseError } from "@/lib/errors";
 import { listTermMonths } from "@/lib/settings.functions";
-import { listGradesForCell, getGradeCellMax, clearGradeCell, approveGrades, type GradeCellRow } from "@/lib/grades.functions";
+import { listGradesForCell, getGradeCellMax, clearGradeCell, approveGrades, approveAllPending, countAllPending, type GradeCellRow } from "@/lib/grades.functions";
 import { useCurrentYearId, resolveRosterYear } from "@/lib/rosters";
 
 export const Route = createFileRoute("/_authenticated/staff/grades")({
@@ -168,11 +168,36 @@ function Page() {
   const pendingIds = (cellGrades ?? []).filter((g) => !g.approved_at).map((g) => g.id);
   const canApprove = isAdmin && !readOnly && pendingIds.length > 0;
 
+  const countAllFn = useServerFn(countAllPending);
+  const { data: allPending } = useQuery({
+    queryKey: ["grades-pending-all"],
+    enabled: isAdmin && !readOnly,
+    queryFn: () => countAllFn(),
+  });
+  const approveAllFn = useServerFn(approveAllPending);
+  const approveAllM = useMutation({
+    mutationFn: () => approveAllFn(),
+    onSuccess: (r) => {
+      toast.success(`Approved ${r.approved} grade(s) school-wide`);
+      qc.invalidateQueries({ queryKey: ["grades-pending-all"] });
+      qc.invalidateQueries({ queryKey: gradesKey });
+    },
+    onError: (e) => toast.error(formatSupabaseError(e)),
+  });
+
   return (
     <Section title={t("nav.grades")}>
       {readOnly && (
         <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm mb-4">
           {t("year.viewing_past_readonly")}
+        </div>
+      )}
+      {isAdmin && !readOnly && (allPending?.count ?? 0) > 0 && (
+        <div className="rounded-md border border-primary/40 bg-primary/5 p-3 text-sm mb-4 flex items-center justify-between gap-3">
+          <span>{allPending!.count} pending grade(s) across all subjects this year.</span>
+          <Button size="sm" onClick={() => approveAllM.mutate()} disabled={approveAllM.isPending}>
+            <Check className="h-3.5 w-3.5 mr-1" /> Approve all pending (school-wide)
+          </Button>
         </div>
       )}
       {canApprove && (

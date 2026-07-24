@@ -63,6 +63,49 @@ export const approveGrades = createServerFn({ method: "POST" })
     return { approved: Number(affected ?? 0) };
   });
 
+/**
+ * Admin-only: approve every pending grade in the current academic year across all subjects.
+ */
+export const approveAllPending = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ approved: number; pending: number }> => {
+    const sb = context.supabase as any;
+    const { data: isAdmin } = await sb.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (!isAdmin) throw new Error("Only admins can approve grades");
+    const { data: yearId, error: yErr } = await sb.rpc("current_academic_year_id");
+    if (yErr) throw new Error(yErr.message);
+    const { data: rows, error } = await sb
+      .from("grades")
+      .select("id")
+      .is("approved_at", null)
+      .eq("academic_year_id", yearId);
+    if (error) throw new Error(error.message);
+    const ids = (rows ?? []).map((r: { id: string }) => r.id);
+    if (ids.length === 0) return { approved: 0, pending: 0 };
+    const { data: affected, error: aErr } = await sb.rpc("approve_grades", { _ids: ids });
+    if (aErr) throw new Error(aErr.message);
+    return { approved: Number(affected ?? 0), pending: ids.length };
+  });
+
+/**
+ * Admin-only: count of pending grades across the entire current year.
+ */
+export const countAllPending = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ count: number }> => {
+    const sb = context.supabase as any;
+    const { data: isAdmin } = await sb.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (!isAdmin) return { count: 0 };
+    const { data: yearId } = await sb.rpc("current_academic_year_id");
+    const { count, error } = await sb
+      .from("grades")
+      .select("id", { count: "exact", head: true })
+      .is("approved_at", null)
+      .eq("academic_year_id", yearId);
+    if (error) throw new Error(error.message);
+    return { count: Number(count ?? 0) };
+  });
+
 export const getGradeCellMax = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { subject_id: string; term: string; month: number | null; year_id?: string | null }) => input)
