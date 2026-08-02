@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, stageGroupForGrade } from "@/lib/i18n";
 import { Section, EmptyState } from "@/components/portal/PortalShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,6 +16,9 @@ import { useMe } from "@/hooks/use-me";
 import { useState } from "react";
 import { toast } from "sonner";
 import { formatSupabaseError } from "@/lib/errors";
+import { FilePicker } from "@/components/files/FilePicker";
+import { Attachments } from "@/components/files/Attachments";
+import { attachFile } from "@/lib/files";
 
 export const Route = createFileRoute("/_authenticated/teacher/subject/$id")({ component: Page });
 
@@ -64,6 +67,8 @@ function Page() {
 
   const [hw, setHw] = useState({ title: "", body: "", due_at: "", auto_lock: true, kind: "simple" as "simple" | "bank", bank_id: "", link_url: "" });
   const [selectedQIds, setSelectedQIds] = useState<Set<string>>(new Set());
+  const [hwFile, setHwFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
   const { data: bankQuestions } = useQuery({
     queryKey: ["bank-questions-for-hw", hw.bank_id],
     enabled: hw.kind === "bank" && !!hw.bank_id,
@@ -95,9 +100,27 @@ function Page() {
       const { error: insErr } = await supabase.from("homework_questions").insert(rows);
       if (insErr) return toast.error(formatSupabaseError(insErr));
     }
+    if (hwFile && me) {
+      setUploading(true);
+      try {
+        await attachFile(hwFile, {
+          category: "homework",
+          homework_id: data.id,
+          uploaded_by: me.userId,
+          stage_group: subject ? stageGroupForGrade(subject.grade_level) : null,
+          grade_level: subject?.grade_level ?? null,
+        });
+      } catch (e) {
+        setUploading(false);
+        return toast.error(e instanceof Error ? e.message : "Upload failed.");
+      }
+      setUploading(false);
+    }
     setHw({ title: "", body: "", due_at: "", auto_lock: true, kind: "simple", bank_id: "", link_url: "" });
     setSelectedQIds(new Set());
+    setHwFile(null);
     qc.invalidateQueries({ queryKey: ["t-hw", id] });
+    qc.invalidateQueries({ queryKey: ["attachments"] });
     toast.success("Created");
   }
 
@@ -178,7 +201,8 @@ function Page() {
                 <Checkbox checked={hw.auto_lock} onCheckedChange={(v) => setHw({ ...hw, auto_lock: !!v })} />
                 Auto-lock at due date
               </label>
-              <Button onClick={createHw}>{t("common.create")}</Button>
+              <FilePicker file={hwFile} onChange={setHwFile} disabled={uploading} />
+              <Button onClick={createHw} disabled={uploading}>{uploading ? "Uploading…" : t("common.create")}</Button>
             </CardContent>
           </Card>
 
@@ -198,6 +222,7 @@ function Page() {
               <CardContent>
                 {h.body && <p className="text-sm whitespace-pre-wrap">{h.body}</p>}
                 {h.due_at && <div className="text-xs text-muted-foreground mt-1">Due {new Date(h.due_at).toLocaleString()}</div>}
+                <Attachments homeworkId={h.id} />
               </CardContent>
             </Card>
           ))}
@@ -213,7 +238,7 @@ function Page() {
             </CardContent>
           </Card>
           {(announcements ?? []).length === 0 ? <EmptyState text={t("common.empty")} /> : announcements!.map((a) => (
-            <Card key={a.id}><CardHeader><CardTitle className="text-base">{a.title}</CardTitle></CardHeader><CardContent><p className="text-sm whitespace-pre-wrap">{a.body}</p></CardContent></Card>
+            <Card key={a.id}><CardHeader><CardTitle className="text-base">{a.title}</CardTitle></CardHeader><CardContent><p className="text-sm whitespace-pre-wrap">{a.body}</p><Attachments announcementId={a.id} /></CardContent></Card>
           ))}
         </TabsContent>
       </Tabs>

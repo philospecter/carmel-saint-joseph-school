@@ -13,6 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState } from "react";
 import { toast } from "sonner";
 import { formatSupabaseError } from "@/lib/errors";
+import { FilePicker } from "@/components/files/FilePicker";
+import { Attachments } from "@/components/files/Attachments";
+import { attachFile } from "@/lib/files";
 
 export const Route = createFileRoute("/_authenticated/staff/announcements")({ component: Page });
 
@@ -24,16 +27,40 @@ function Page() {
   const availableStages = isAdmin ? [...STAGE_GROUPS] : (me?.stages ?? []);
   const [stage, setStage] = useState<string>(availableStages[0] ?? "primary_1_2");
   const [title, setTitle] = useState(""); const [body, setBody] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
   const { data } = useQuery({
     queryKey: ["staff-anns"],
     queryFn: async () => (await supabase.from("announcements").select("*").eq("scope", "stage").order("created_at", { ascending: false })).data ?? [],
   });
   async function post() {
     if (!title || !body || !me) return;
-    const { error } = await supabase.from("announcements").insert({ author_id: me.userId, scope: "stage", stage_group: stage as never, title, body });
+    const { data: created, error } = await supabase
+      .from("announcements")
+      .insert({ author_id: me.userId, scope: "stage", stage_group: stage as never, title, body })
+      .select("id")
+      .single();
     if (error) return toast.error(formatSupabaseError(error));
+    if (file && created) {
+      setUploading(true);
+      try {
+        await attachFile(file, {
+          category: "announcement",
+          announcement_id: created.id,
+          uploaded_by: me.userId,
+          stage_group: stage,
+          grade_level: null, // stage-wide: visible to every grade in the stage
+        });
+      } catch (e) {
+        setUploading(false);
+        return toast.error(e instanceof Error ? e.message : "Upload failed.");
+      }
+      setUploading(false);
+    }
     setTitle(""); setBody("");
+    setFile(null);
     qc.invalidateQueries({ queryKey: ["staff-anns"] });
+    qc.invalidateQueries({ queryKey: ["attachments"] });
     toast.success("Posted");
   }
   async function del(id: string) {
@@ -55,7 +82,8 @@ function Page() {
             <div><Label>{t("common.title")}</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} /></div>
           </div>
           <div><Label>{t("common.body")}</Label><Textarea rows={3} value={body} onChange={(e) => setBody(e.target.value)} /></div>
-          <Button onClick={post}>{t("common.create")}</Button>
+          <FilePicker file={file} onChange={setFile} disabled={uploading} />
+          <Button onClick={post} disabled={uploading}>{uploading ? "Uploading…" : t("common.create")}</Button>
         </CardContent>
       </Card>
       <div className="space-y-3">
@@ -65,7 +93,7 @@ function Page() {
               <CardTitle className="text-base">{a.title}</CardTitle>
               <Button size="sm" variant="ghost" onClick={() => del(a.id)}>×</Button>
             </CardHeader>
-            <CardContent><p className="text-sm whitespace-pre-wrap">{a.body}</p><div className="text-xs text-muted-foreground mt-1">{a.stage_group && t(`stage.${a.stage_group}`)}</div></CardContent>
+            <CardContent><p className="text-sm whitespace-pre-wrap">{a.body}</p><Attachments announcementId={a.id} /><div className="text-xs text-muted-foreground mt-1">{a.stage_group && t(`stage.${a.stage_group}`)}</div></CardContent>
           </Card>
         ))}
       </div>
