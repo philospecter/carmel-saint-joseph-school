@@ -74,7 +74,6 @@ function Page() {
       .select("user_id")
       .eq("stage_group", stage as never)
       .eq("grade_level", grade as never)
-      .eq("is_graduated", false)
       .eq("academic_year_id", currentYearId as never);
     return (enrolls ?? []).map((e) => e.user_id);
   }

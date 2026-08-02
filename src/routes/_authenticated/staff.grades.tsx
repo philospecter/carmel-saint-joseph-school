@@ -94,16 +94,13 @@ function Page() {
   const { data: students } = useQuery({
     queryKey: ["stud", stage, grade, effectiveYearId ?? ""],
     enabled: !!effectiveYearId,
-    queryFn: async () => {
-      const q = supabase
+    queryFn: async () =>
+      (await supabase
         .from("student_enrollments")
-        .select("user_id, profiles!student_enrollments_user_id_profiles_fkey(full_name)")
+        .select("user_id, is_graduated, profiles!student_enrollments_user_id_profiles_fkey(full_name)")
         .eq("stage_group", stage as never)
         .eq("grade_level", grade as never)
-        .eq("is_graduated", false)
-        .eq("academic_year_id", effectiveYearId as never);
-      return (await q).data ?? [];
-    },
+        .eq("academic_year_id", effectiveYearId as never)).data ?? [],
   });
 
   const cellReady = !!subject && (term === "midyear" || term === "final" || month !== null);
@@ -287,6 +284,7 @@ function Page() {
                 key={s.user_id}
                 studentId={s.user_id}
                 studentName={p?.full_name ?? "—"}
+                isGraduated={s.is_graduated}
                 existing={existing}
                 subjectId={subject}
                 term={term}
@@ -335,10 +333,11 @@ function Page() {
 
 
 function GradeRow({
-  studentId, studentName, existing, subjectId, term, month, sessionMax, enteredById, showAudit, readOnly, isAdmin, onApprove, onSaved,
+  studentId, studentName, isGraduated, existing, subjectId, term, month, sessionMax, enteredById, showAudit, readOnly, isAdmin, onApprove, onSaved,
 }: {
   studentId: string;
   studentName: string;
+  isGraduated?: boolean;
   existing: GradeCellRow | null;
   subjectId: string;
   term: Term;
@@ -403,6 +402,9 @@ function GradeRow({
     <div className="p-3 flex items-center justify-between gap-3">
       <div className="min-w-0 flex-1">
         <div className="truncate">{studentName}</div>
+        {isGraduated && (
+          <Badge variant="outline" className="text-xs mt-0.5 border-emerald-500/50 text-emerald-600">Graduated</Badge>
+        )}
         {existing && !existing.approved_at && (
           <Badge variant="outline" className="text-xs mt-0.5 border-amber-500/50 text-amber-600">Pending approval</Badge>
         )}

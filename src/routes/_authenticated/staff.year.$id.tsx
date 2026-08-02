@@ -234,7 +234,7 @@ function GradesPanel({ yearId, yearLabel }: { yearId: string; yearLabel: string 
     queryKey: ["yr-stud", yearId, stage, grade],
     queryFn: async () =>
       (await supabase.from("student_enrollments")
-        .select("user_id, profiles!student_enrollments_user_id_profiles_fkey(full_name, national_id)")
+        .select("user_id, is_graduated, profiles!student_enrollments_user_id_profiles_fkey(full_name, national_id)")
         .eq("academic_year_id", yearId as never)
         .eq("stage_group", stage as never)
         .eq("grade_level", grade as never)).data ?? [],
@@ -370,7 +370,12 @@ function GradesPanel({ yearId, yearLabel }: { yearId: string; yearLabel: string 
             const g = gMap.get(s.user_id);
             return (
               <div key={s.user_id} className="p-3 flex items-center justify-between gap-3">
-                <div className="truncate">{p?.full_name ?? "—"}</div>
+                <div className="min-w-0">
+                  <div className="truncate">{p?.full_name ?? "—"}</div>
+                  {s.is_graduated && (
+                    <Badge variant="outline" className="text-xs mt-0.5 border-emerald-500/50 text-emerald-600">Graduated</Badge>
+                  )}
+                </div>
                 {g ? (
                   <Badge variant={g.score < g.max_score / 2 ? "destructive" : "secondary"} className="font-serif text-base px-3 py-1">
                     {g.score}/{g.max_score}
@@ -420,7 +425,7 @@ function AttendancePanel({ yearId, yearLabel }: { yearId: string; yearLabel: str
     queryKey: ["yr-att-stud", yearId, stage, grade],
     queryFn: async () =>
       (await supabase.from("student_enrollments")
-        .select("user_id, profiles!student_enrollments_user_id_profiles_fkey(full_name, national_id)")
+        .select("user_id, is_graduated, profiles!student_enrollments_user_id_profiles_fkey(full_name, national_id)")
         .eq("academic_year_id", yearId as never)
         .eq("stage_group", stage as never)
         .eq("grade_level", grade as never)).data ?? [],
@@ -512,7 +517,12 @@ function AttendancePanel({ yearId, yearLabel }: { yearId: string; yearLabel: str
             const status = aMap.get(s.user_id);
             return (
               <div key={s.user_id} className="p-3 flex items-center justify-between gap-3">
-                <div className="truncate">{p?.full_name ?? "—"}</div>
+                <div className="min-w-0">
+                  <div className="truncate">{p?.full_name ?? "—"}</div>
+                  {s.is_graduated && (
+                    <Badge variant="outline" className="text-xs mt-0.5 border-emerald-500/50 text-emerald-600">Graduated</Badge>
+                  )}
+                </div>
                 {status ? (
                   <Badge variant={status === "present" ? "secondary" : status === "late" ? "outline" : "destructive"}>
                     {t(`attendance.${status}`)}

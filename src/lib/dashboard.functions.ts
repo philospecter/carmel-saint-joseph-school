@@ -45,11 +45,10 @@ export const getStaffDashboardStats = createServerFn({ method: "GET" })
       scopeStages = (sma ?? []).map((r: { stage_group: string }) => r.stage_group);
     }
 
-    // Active students: current-year enrollments, not graduated. RLS scopes SM.
+    // Active students: current-year enrollments. RLS scopes SM.
     let enrollQ = sb
       .from("student_enrollments")
-      .select("user_id, stage_group, grade_level", { count: "exact" })
-      .eq("is_graduated", false);
+      .select("user_id, stage_group, grade_level", { count: "exact" });
     if (currentYearId) enrollQ = enrollQ.eq("academic_year_id", currentYearId);
     if (scopeStages && scopeStages.length > 0) enrollQ = enrollQ.in("stage_group", scopeStages);
     const { data: enrolls, count: activeCount } = await enrollQ;

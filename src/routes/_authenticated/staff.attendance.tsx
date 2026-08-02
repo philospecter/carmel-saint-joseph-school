@@ -7,6 +7,7 @@ import { useMe } from "@/hooks/use-me";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { toast } from "sonner";
 import { formatSupabaseError } from "@/lib/errors";
@@ -36,16 +37,13 @@ function Page() {
   const { data: students } = useQuery({
     queryKey: ["staff-att-students", stage, grade, effectiveYearId ?? ""],
     enabled: !!effectiveYearId,
-    queryFn: async () => {
-      const q = supabase
+    queryFn: async () =>
+      (await supabase
         .from("student_enrollments")
-        .select("user_id, profiles!student_enrollments_user_id_profiles_fkey(full_name, national_id)")
+        .select("user_id, is_graduated, profiles!student_enrollments_user_id_profiles_fkey(full_name, national_id)")
         .eq("stage_group", stage as never)
         .eq("grade_level", grade as never)
-        .eq("is_graduated", false)
-        .eq("academic_year_id", effectiveYearId as never);
-      return (await q).data ?? [];
-    },
+        .eq("academic_year_id", effectiveYearId as never)).data ?? [],
   });
   const { data: recs } = useQuery({
     queryKey: ["staff-att-recs", stage, grade, date, yearId ?? ""],
@@ -123,7 +121,12 @@ function Page() {
             const status = map.get(s.user_id)?.status;
             return (
               <div key={s.user_id} className="flex items-center justify-between p-3 gap-2 flex-wrap">
-                <div>{p?.full_name}</div>
+                <div className="min-w-0">
+                  <div>{p?.full_name}</div>
+                  {s.is_graduated && (
+                    <Badge variant="outline" className="text-xs mt-0.5 border-emerald-500/50 text-emerald-600">Graduated</Badge>
+                  )}
+                </div>
                 <div className="flex gap-1">
                   {(["present", "late", "absent"] as const).map((st) => (
                     <Button key={st} size="sm" variant={status === st ? "default" : "outline"} onClick={() => mark(s.user_id, st)} disabled={readOnly}>{t(`attendance.${st}`)}</Button>

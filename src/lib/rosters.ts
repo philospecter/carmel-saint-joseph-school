@@ -2,12 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Shared roster contract for "active students":
- *   academic_year_id = <current or explicit year> AND is_graduated = false
+ * Shared roster helper for resolving the effective academic year.
  *
- * Every screen that lists students for grade entry, attendance entry,
- * exports, or user management MUST resolve enrollments through this
- * helper so graduated / historical rows never leak into today's roster.
+ * IMPORTANT: Any query against student_enrollments that is already scoped
+ * to a specific academic_year_id (whether current or historical) MUST NOT
+ * filter by is_graduated. That flag is a per-row historical marker; it
+ * should NOT hide students from the roster of the year they graduated FROM.
+ * Scoping by academic_year_id already isolates the correct row.
  */
 
 export function useCurrentYearId() {

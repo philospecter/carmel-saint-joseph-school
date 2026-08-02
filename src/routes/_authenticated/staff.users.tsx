@@ -66,7 +66,6 @@ function Page() {
         supabase
           .from("student_enrollments")
           .select("user_id, stage_group, grade_level")
-          .eq("is_graduated", false)
           .eq("academic_year_id", currentYearId as never),
         supabase.from("stage_manager_assignments").select("user_id, stage_group"),
       ]);
