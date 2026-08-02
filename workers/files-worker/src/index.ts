@@ -61,7 +61,7 @@ export default {
       }
       const file = fileEntry as File;
 
-      const MAX_BYTES = 25 * 1024 * 1024;
+      const MAX_BYTES = 10 * 1024 * 1024; // 10MB
       if (file.size > MAX_BYTES) {
         return json({ error: "File too large (25MB max)" }, 413);
       }
