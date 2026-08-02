@@ -6,6 +6,7 @@ import { Section, EmptyState } from "@/components/portal/PortalShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Attachments } from "@/components/files/Attachments";
 
 export const Route = createFileRoute("/_authenticated/student/subjects/$id")({ component: Page });
 
@@ -54,6 +55,7 @@ function Page() {
                 <CardContent>
                   {h.body && <p className="text-sm whitespace-pre-wrap mb-2">{h.body}</p>}
                   {h.due_at && <div className="text-xs text-muted-foreground">Due {new Date(h.due_at).toLocaleString()}</div>}
+                  <Attachments homeworkId={h.id} />
                 </CardContent>
               </Card>
             </Link>
@@ -63,7 +65,7 @@ function Page() {
           {(announcements ?? []).length === 0 ? <EmptyState text={t("common.empty")} /> : announcements!.map((a) => (
             <Card key={a.id}>
               <CardHeader><CardTitle className="text-base">{a.title}</CardTitle></CardHeader>
-              <CardContent><p className="text-sm whitespace-pre-wrap">{a.body}</p></CardContent>
+              <CardContent><p className="text-sm whitespace-pre-wrap">{a.body}</p><Attachments announcementId={a.id} /></CardContent>
             </Card>
           ))}
         </TabsContent>
