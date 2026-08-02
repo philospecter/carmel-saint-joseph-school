@@ -5,6 +5,7 @@ import { useMe } from "@/hooks/use-me";
 import { useI18n } from "@/lib/i18n";
 import { Section, EmptyState } from "@/components/portal/PortalShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Attachments } from "@/components/files/Attachments";
 
 export const Route = createFileRoute("/_authenticated/student/announcements")({ component: Page });
 
@@ -27,7 +28,7 @@ function Page() {
           data!.map((a) => (
             <Card key={a.id}>
               <CardHeader><CardTitle className="text-base">{a.title}</CardTitle></CardHeader>
-              <CardContent><p className="whitespace-pre-wrap text-sm">{a.body}</p><div className="mt-2 text-xs text-muted-foreground">{new Date(a.created_at).toLocaleDateString()}</div></CardContent>
+              <CardContent><p className="whitespace-pre-wrap text-sm">{a.body}</p><Attachments announcementId={a.id} /><div className="mt-2 text-xs text-muted-foreground">{new Date(a.created_at).toLocaleDateString()}</div></CardContent>
             </Card>
           ))
         }
