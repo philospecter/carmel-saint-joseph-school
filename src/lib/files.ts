@@ -68,3 +68,34 @@ export async function uploadToWorker(file: File, category: string): Promise<Uplo
   if (!result?.r2_key) throw new Error("Upload failed — no file key returned.");
   return result;
 }
+
+export type AttachTarget = {
+  category: "homework" | "announcement";
+  homework_id?: string | null;
+  announcement_id?: string | null;
+  uploaded_by: string;
+  stage_group: string | null;
+  grade_level: string | null;
+  academic_year_id?: string | null;
+};
+
+/** Uploads the file, then records it in the `files` table. */
+export async function attachFile(file: File, target: AttachTarget): Promise<UploadedFile> {
+  const uploaded = await uploadToWorker(file, target.category);
+  const row = {
+    r2_key: uploaded.r2_key,
+    file_name: uploaded.file_name,
+    file_type: uploaded.file_type,
+    file_size_bytes: uploaded.file_size_bytes,
+    category: target.category,
+    uploaded_by: target.uploaded_by,
+    homework_id: target.homework_id ?? null,
+    announcement_id: target.announcement_id ?? null,
+    stage_group: target.stage_group,
+    grade_level: target.grade_level,
+    ...(target.academic_year_id ? { academic_year_id: target.academic_year_id } : {}),
+  };
+  const { error } = await supabase.from("files").insert(row as never);
+  if (error) throw new Error(error.message);
+  return uploaded;
+}
