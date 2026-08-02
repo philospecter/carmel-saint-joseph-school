@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { toast } from "sonner";
 import { formatSupabaseError } from "@/lib/errors";
+import { Attachments } from "@/components/files/Attachments";
 
 export const Route = createFileRoute("/_authenticated/student/homework/$id")({ component: Page });
 
@@ -133,9 +134,11 @@ function Page() {
                 Due {new Date(hw.due_at).toLocaleString()}
               </div>
             )}
+            <Attachments homeworkId={id} />
           </CardContent>
         </Card>
       )}
+      {!hw.body && <Attachments homeworkId={id} className="mb-4 space-y-1" />}
 
       {hw.kind === "simple" && (
         <Card>
