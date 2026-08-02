@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const FILES_WORKER_URL = "https://carmel-files-worker.carmelsaintjoesph.workers.dev";
 
-export const MAX_FILE_BYTES = 25 * 1024 * 1024;
+export const MAX_FILE_BYTES = 10 * 1024 * 1024;
 export const ALLOWED_FILE_TYPES = [
   "application/pdf",
   "image/png",
@@ -25,7 +25,7 @@ export function validateFile(file: File): string | null {
   if (!ALLOWED_FILE_TYPES.includes(file.type as (typeof ALLOWED_FILE_TYPES)[number])) {
     return "Only PDF, PNG, JPEG or WebP files are allowed.";
   }
-  if (file.size > MAX_FILE_BYTES) return "File is too large (max 25 MB).";
+  if (file.size > MAX_FILE_BYTES) return "File is too large (max 10 MB).";
   return null;
 }
 

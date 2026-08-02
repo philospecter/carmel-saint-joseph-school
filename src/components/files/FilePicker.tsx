@@ -56,7 +56,7 @@ export function FilePicker({ label = "Attachment (optional)", file, onChange, di
           </>
         )}
       </div>
-      <p className="text-xs text-muted-foreground mt-1">PDF, PNG, JPEG or WebP — up to 25 MB.</p>
+      <p className="text-xs text-muted-foreground mt-1">PDF, PNG, JPEG or WebP — up to 10 MB.</p>
     </div>
   );
 }
