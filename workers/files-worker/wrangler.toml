@@ -1,0 +1,10 @@
+name = "carmel-files-worker"
+main = "src/index.ts"
+compatibility_date = "2026-07-01"
+
+[[r2_buckets]]
+binding = "FILES_BUCKET"
+bucket_name = "carmel-school-files"
+
+[triggers]
+crons = ["0 3 * * *"]
