@@ -133,6 +133,79 @@ export type Database = {
           },
         ]
       }
+      files: {
+        Row: {
+          academic_year_id: string | null
+          announcement_id: string | null
+          category: string
+          created_at: string
+          expires_at: string | null
+          file_name: string
+          file_size_bytes: number
+          file_type: string
+          grade_level: Database["public"]["Enums"]["grade_level"] | null
+          homework_id: string | null
+          id: string
+          r2_key: string
+          stage_group: Database["public"]["Enums"]["stage_group"] | null
+          uploaded_by: string
+        }
+        Insert: {
+          academic_year_id?: string | null
+          announcement_id?: string | null
+          category?: string
+          created_at?: string
+          expires_at?: string | null
+          file_name: string
+          file_size_bytes?: number
+          file_type: string
+          grade_level?: Database["public"]["Enums"]["grade_level"] | null
+          homework_id?: string | null
+          id?: string
+          r2_key: string
+          stage_group?: Database["public"]["Enums"]["stage_group"] | null
+          uploaded_by: string
+        }
+        Update: {
+          academic_year_id?: string | null
+          announcement_id?: string | null
+          category?: string
+          created_at?: string
+          expires_at?: string | null
+          file_name?: string
+          file_size_bytes?: number
+          file_type?: string
+          grade_level?: Database["public"]["Enums"]["grade_level"] | null
+          homework_id?: string | null
+          id?: string
+          r2_key?: string
+          stage_group?: Database["public"]["Enums"]["stage_group"] | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "files_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "academic_years"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "files_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "announcements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "files_homework_id_fkey"
+            columns: ["homework_id"]
+            isOneToOne: false
+            referencedRelation: "homework"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       grades: {
         Row: {
           academic_year_id: string
