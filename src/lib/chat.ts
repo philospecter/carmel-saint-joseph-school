@@ -1,0 +1,137 @@
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
+export type ChatKind = "teacher_student" | "sm_teacher";
+
+export type ChatMessage = {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+};
+
+// The generated types don't include the chat tables (they live on the
+// external backend as well), so we use an untyped client for them.
+const sb = () => supabase as unknown as {
+  from: (t: string) => any;
+  channel: (n: string) => any;
+  removeChannel: (c: unknown) => void;
+};
+
+export type OpenConversationArgs = {
+  kind: ChatKind;
+  teacherId: string;
+  otherId: string;
+  subjectId?: string | null;
+  yearId: string;
+};
+
+/**
+ * Finds an existing conversation or creates it. We never gate on client-side
+ * permission logic — the database RLS policy is the source of truth, so we
+ * simply try the insert and surface the error if it's rejected.
+ */
+export async function openConversation(args: OpenConversationArgs): Promise<string> {
+  const { kind, teacherId, otherId, subjectId, yearId } = args;
+  let q = sb()
+    .from("conversations")
+    .select("id")
+    .eq("kind", kind)
+    .eq("teacher_id", teacherId)
+    .eq("other_id", otherId)
+    .eq("academic_year_id", yearId);
+  q = kind === "teacher_student" ? q.eq("subject_id", subjectId) : q.is("subject_id", null);
+  const { data: existing, error: findErr } = await q.maybeSingle();
+  if (findErr) throw findErr;
+  if (existing?.id) return existing.id as string;
+
+  const { data, error } = await sb()
+    .from("conversations")
+    .insert({
+      kind,
+      teacher_id: teacherId,
+      other_id: otherId,
+      subject_id: kind === "teacher_student" ? subjectId : null,
+      academic_year_id: yearId,
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id as string;
+}
+
+export function useMessages(conversationId: string | null) {
+  const qc = useQueryClient();
+  const key = ["chat-messages", conversationId] as const;
+
+  const query = useQuery({
+    queryKey: key,
+    enabled: !!conversationId,
+    queryFn: async () => {
+      const { data, error } = await sb()
+        .from("messages")
+        .select("id, conversation_id, sender_id, body, created_at")
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as ChatMessage[];
+    },
+  });
+
+  useEffect(() => {
+    if (!conversationId) return;
+    const channel = sb()
+      .channel(`messages:${conversationId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload: { new: ChatMessage }) => {
+          qc.setQueryData<ChatMessage[]>(key, (prev) => {
+            const list = prev ?? [];
+            if (list.some((m) => m.id === payload.new.id)) return list;
+            return [...list, payload.new];
+          });
+        },
+      )
+      .subscribe();
+    return () => { sb().removeChannel(channel); };
+  }, [conversationId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return query;
+}
+
+export async function sendMessage(conversationId: string, senderId: string, body: string) {
+  const text = body.trim();
+  if (!text) throw new Error("Message is empty.");
+  if (text.length > 4000) throw new Error("Message is too long (max 4000 characters).");
+  const { error } = await sb().from("messages").insert({
+    conversation_id: conversationId,
+    sender_id: senderId,
+    body: text,
+  });
+  if (error) throw error;
+}
+
+/** Resolves display names for a set of user ids. */
+export function useProfileNames(ids: string[]) {
+  const unique = Array.from(new Set(ids.filter(Boolean))).sort();
+  return useQuery({
+    queryKey: ["chat-profile-names", unique.join(",")],
+    enabled: unique.length > 0,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("id, full_name").in("id", unique);
+      if (error) throw error;
+      const map = new Map<string, string>();
+      for (const p of data ?? []) map.set(p.id, p.full_name);
+      return map;
+    },
+  });
+}
