@@ -35,6 +35,7 @@ import { Route as AuthenticatedStaffRequestsRouteImport } from './routes/_authen
 import { Route as AuthenticatedStaffManagersRouteImport } from './routes/_authenticated/staff.managers'
 import { Route as AuthenticatedStaffGradesRouteImport } from './routes/_authenticated/staff.grades'
 import { Route as AuthenticatedStaffExportRouteImport } from './routes/_authenticated/staff.export'
+import { Route as AuthenticatedStaffChatRouteImport } from './routes/_authenticated/staff.chat'
 import { Route as AuthenticatedStaffAttendanceRouteImport } from './routes/_authenticated/staff.attendance'
 import { Route as AuthenticatedStaffAnnouncementsRouteImport } from './routes/_authenticated/staff.announcements'
 import { Route as AuthenticatedStudentSubjectsIndexRouteImport } from './routes/_authenticated/student.subjects.index'
@@ -192,6 +193,11 @@ const AuthenticatedStaffExportRoute =
     path: '/export',
     getParentRoute: () => AuthenticatedStaffRoute,
   } as any)
+const AuthenticatedStaffChatRoute = AuthenticatedStaffChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => AuthenticatedStaffRoute,
+} as any)
 const AuthenticatedStaffAttendanceRoute =
   AuthenticatedStaffAttendanceRouteImport.update({
     id: '/attendance',
@@ -262,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/teacher': typeof AuthenticatedTeacherRouteWithChildren
   '/staff/announcements': typeof AuthenticatedStaffAnnouncementsRoute
   '/staff/attendance': typeof AuthenticatedStaffAttendanceRoute
+  '/staff/chat': typeof AuthenticatedStaffChatRoute
   '/staff/export': typeof AuthenticatedStaffExportRoute
   '/staff/grades': typeof AuthenticatedStaffGradesRoute
   '/staff/managers': typeof AuthenticatedStaffManagersRoute
@@ -296,6 +303,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/staff/announcements': typeof AuthenticatedStaffAnnouncementsRoute
   '/staff/attendance': typeof AuthenticatedStaffAttendanceRoute
+  '/staff/chat': typeof AuthenticatedStaffChatRoute
   '/staff/export': typeof AuthenticatedStaffExportRoute
   '/staff/grades': typeof AuthenticatedStaffGradesRoute
   '/staff/managers': typeof AuthenticatedStaffManagersRoute
@@ -334,6 +342,7 @@ export interface FileRoutesById {
   '/_authenticated/teacher': typeof AuthenticatedTeacherRouteWithChildren
   '/_authenticated/staff/announcements': typeof AuthenticatedStaffAnnouncementsRoute
   '/_authenticated/staff/attendance': typeof AuthenticatedStaffAttendanceRoute
+  '/_authenticated/staff/chat': typeof AuthenticatedStaffChatRoute
   '/_authenticated/staff/export': typeof AuthenticatedStaffExportRoute
   '/_authenticated/staff/grades': typeof AuthenticatedStaffGradesRoute
   '/_authenticated/staff/managers': typeof AuthenticatedStaffManagersRoute
@@ -373,6 +382,7 @@ export interface FileRouteTypes {
     | '/teacher'
     | '/staff/announcements'
     | '/staff/attendance'
+    | '/staff/chat'
     | '/staff/export'
     | '/staff/grades'
     | '/staff/managers'
@@ -407,6 +417,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/staff/announcements'
     | '/staff/attendance'
+    | '/staff/chat'
     | '/staff/export'
     | '/staff/grades'
     | '/staff/managers'
@@ -444,6 +455,7 @@ export interface FileRouteTypes {
     | '/_authenticated/teacher'
     | '/_authenticated/staff/announcements'
     | '/_authenticated/staff/attendance'
+    | '/_authenticated/staff/chat'
     | '/_authenticated/staff/export'
     | '/_authenticated/staff/grades'
     | '/_authenticated/staff/managers'
@@ -664,6 +676,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStaffExportRouteImport
       parentRoute: typeof AuthenticatedStaffRoute
     }
+    '/_authenticated/staff/chat': {
+      id: '/_authenticated/staff/chat'
+      path: '/chat'
+      fullPath: '/staff/chat'
+      preLoaderRoute: typeof AuthenticatedStaffChatRouteImport
+      parentRoute: typeof AuthenticatedStaffRoute
+    }
     '/_authenticated/staff/attendance': {
       id: '/_authenticated/staff/attendance'
       path: '/attendance'
@@ -740,6 +759,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedStaffRouteChildren {
   AuthenticatedStaffAnnouncementsRoute: typeof AuthenticatedStaffAnnouncementsRoute
   AuthenticatedStaffAttendanceRoute: typeof AuthenticatedStaffAttendanceRoute
+  AuthenticatedStaffChatRoute: typeof AuthenticatedStaffChatRoute
   AuthenticatedStaffExportRoute: typeof AuthenticatedStaffExportRoute
   AuthenticatedStaffGradesRoute: typeof AuthenticatedStaffGradesRoute
   AuthenticatedStaffManagersRoute: typeof AuthenticatedStaffManagersRoute
@@ -757,6 +777,7 @@ interface AuthenticatedStaffRouteChildren {
 const AuthenticatedStaffRouteChildren: AuthenticatedStaffRouteChildren = {
   AuthenticatedStaffAnnouncementsRoute: AuthenticatedStaffAnnouncementsRoute,
   AuthenticatedStaffAttendanceRoute: AuthenticatedStaffAttendanceRoute,
+  AuthenticatedStaffChatRoute: AuthenticatedStaffChatRoute,
   AuthenticatedStaffExportRoute: AuthenticatedStaffExportRoute,
   AuthenticatedStaffGradesRoute: AuthenticatedStaffGradesRoute,
   AuthenticatedStaffManagersRoute: AuthenticatedStaffManagersRoute,
