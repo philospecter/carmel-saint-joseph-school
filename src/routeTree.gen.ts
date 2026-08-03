@@ -24,6 +24,7 @@ import { Route as AuthenticatedTeacherChatRouteImport } from './routes/_authenti
 import { Route as AuthenticatedTeacherBanksRouteImport } from './routes/_authenticated/teacher.banks'
 import { Route as AuthenticatedStudentSubjectsRouteImport } from './routes/_authenticated/student.subjects'
 import { Route as AuthenticatedStudentGradesRouteImport } from './routes/_authenticated/student.grades'
+import { Route as AuthenticatedStudentChatRouteImport } from './routes/_authenticated/student.chat'
 import { Route as AuthenticatedStudentAttendanceRouteImport } from './routes/_authenticated/student.attendance'
 import { Route as AuthenticatedStudentAnnouncementsRouteImport } from './routes/_authenticated/student.announcements'
 import { Route as AuthenticatedStaffUsersRouteImport } from './routes/_authenticated/staff.users'
@@ -124,6 +125,12 @@ const AuthenticatedStudentGradesRoute =
   AuthenticatedStudentGradesRouteImport.update({
     id: '/grades',
     path: '/grades',
+    getParentRoute: () => AuthenticatedStudentRoute,
+  } as any)
+const AuthenticatedStudentChatRoute =
+  AuthenticatedStudentChatRouteImport.update({
+    id: '/chat',
+    path: '/chat',
     getParentRoute: () => AuthenticatedStudentRoute,
   } as any)
 const AuthenticatedStudentAttendanceRoute =
@@ -265,6 +272,7 @@ export interface FileRoutesByFullPath {
   '/staff/users': typeof AuthenticatedStaffUsersRoute
   '/student/announcements': typeof AuthenticatedStudentAnnouncementsRoute
   '/student/attendance': typeof AuthenticatedStudentAttendanceRoute
+  '/student/chat': typeof AuthenticatedStudentChatRoute
   '/student/grades': typeof AuthenticatedStudentGradesRoute
   '/student/subjects': typeof AuthenticatedStudentSubjectsRouteWithChildren
   '/teacher/banks': typeof AuthenticatedTeacherBanksRoute
@@ -298,6 +306,7 @@ export interface FileRoutesByTo {
   '/staff/users': typeof AuthenticatedStaffUsersRoute
   '/student/announcements': typeof AuthenticatedStudentAnnouncementsRoute
   '/student/attendance': typeof AuthenticatedStudentAttendanceRoute
+  '/student/chat': typeof AuthenticatedStudentChatRoute
   '/student/grades': typeof AuthenticatedStudentGradesRoute
   '/teacher/banks': typeof AuthenticatedTeacherBanksRoute
   '/teacher/chat': typeof AuthenticatedTeacherChatRoute
@@ -335,6 +344,7 @@ export interface FileRoutesById {
   '/_authenticated/staff/users': typeof AuthenticatedStaffUsersRoute
   '/_authenticated/student/announcements': typeof AuthenticatedStudentAnnouncementsRoute
   '/_authenticated/student/attendance': typeof AuthenticatedStudentAttendanceRoute
+  '/_authenticated/student/chat': typeof AuthenticatedStudentChatRoute
   '/_authenticated/student/grades': typeof AuthenticatedStudentGradesRoute
   '/_authenticated/student/subjects': typeof AuthenticatedStudentSubjectsRouteWithChildren
   '/_authenticated/teacher/banks': typeof AuthenticatedTeacherBanksRoute
@@ -373,6 +383,7 @@ export interface FileRouteTypes {
     | '/staff/users'
     | '/student/announcements'
     | '/student/attendance'
+    | '/student/chat'
     | '/student/grades'
     | '/student/subjects'
     | '/teacher/banks'
@@ -406,6 +417,7 @@ export interface FileRouteTypes {
     | '/staff/users'
     | '/student/announcements'
     | '/student/attendance'
+    | '/student/chat'
     | '/student/grades'
     | '/teacher/banks'
     | '/teacher/chat'
@@ -442,6 +454,7 @@ export interface FileRouteTypes {
     | '/_authenticated/staff/users'
     | '/_authenticated/student/announcements'
     | '/_authenticated/student/attendance'
+    | '/_authenticated/student/chat'
     | '/_authenticated/student/grades'
     | '/_authenticated/student/subjects'
     | '/_authenticated/teacher/banks'
@@ -572,6 +585,13 @@ declare module '@tanstack/react-router' {
       path: '/grades'
       fullPath: '/student/grades'
       preLoaderRoute: typeof AuthenticatedStudentGradesRouteImport
+      parentRoute: typeof AuthenticatedStudentRoute
+    }
+    '/_authenticated/student/chat': {
+      id: '/_authenticated/student/chat'
+      path: '/chat'
+      fullPath: '/student/chat'
+      preLoaderRoute: typeof AuthenticatedStudentChatRouteImport
       parentRoute: typeof AuthenticatedStudentRoute
     }
     '/_authenticated/student/attendance': {
@@ -774,6 +794,7 @@ const AuthenticatedStudentSubjectsRouteWithChildren =
 interface AuthenticatedStudentRouteChildren {
   AuthenticatedStudentAnnouncementsRoute: typeof AuthenticatedStudentAnnouncementsRoute
   AuthenticatedStudentAttendanceRoute: typeof AuthenticatedStudentAttendanceRoute
+  AuthenticatedStudentChatRoute: typeof AuthenticatedStudentChatRoute
   AuthenticatedStudentGradesRoute: typeof AuthenticatedStudentGradesRoute
   AuthenticatedStudentSubjectsRoute: typeof AuthenticatedStudentSubjectsRouteWithChildren
   AuthenticatedStudentIndexRoute: typeof AuthenticatedStudentIndexRoute
@@ -784,6 +805,7 @@ const AuthenticatedStudentRouteChildren: AuthenticatedStudentRouteChildren = {
   AuthenticatedStudentAnnouncementsRoute:
     AuthenticatedStudentAnnouncementsRoute,
   AuthenticatedStudentAttendanceRoute: AuthenticatedStudentAttendanceRoute,
+  AuthenticatedStudentChatRoute: AuthenticatedStudentChatRoute,
   AuthenticatedStudentGradesRoute: AuthenticatedStudentGradesRoute,
   AuthenticatedStudentSubjectsRoute:
     AuthenticatedStudentSubjectsRouteWithChildren,
