@@ -1,0 +1,2 @@
+revoke execute on function public.chat_relationship_exists(text, uuid, uuid, uuid, uuid) from anon, public;
+grant execute on function public.chat_relationship_exists(text, uuid, uuid, uuid, uuid) to authenticated, service_role;
