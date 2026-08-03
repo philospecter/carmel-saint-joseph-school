@@ -133,6 +133,51 @@ export type Database = {
           },
         ]
       }
+      conversations: {
+        Row: {
+          academic_year_id: string
+          created_at: string
+          id: string
+          kind: string
+          other_id: string
+          subject_id: string | null
+          teacher_id: string
+        }
+        Insert: {
+          academic_year_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          other_id: string
+          subject_id?: string | null
+          teacher_id: string
+        }
+        Update: {
+          academic_year_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          other_id?: string
+          subject_id?: string | null
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "academic_years"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       files: {
         Row: {
           academic_year_id: string | null
@@ -474,6 +519,38 @@ export type Database = {
           },
         ]
       }
+      messages: {
+        Row: {
+          body: string
+          conversation_id: string
+          created_at: string
+          id: string
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           address: string | null
@@ -790,6 +867,16 @@ export type Database = {
     }
     Functions: {
       approve_grades: { Args: { _ids: string[] }; Returns: number }
+      chat_relationship_exists: {
+        Args: {
+          _kind: string
+          _other_id: string
+          _subject_id: string
+          _teacher_id: string
+          _year_id: string
+        }
+        Returns: boolean
+      }
       current_academic_year_id: { Args: never; Returns: string }
       delete_academic_year: { Args: { _year: string }; Returns: undefined }
       has_role: {

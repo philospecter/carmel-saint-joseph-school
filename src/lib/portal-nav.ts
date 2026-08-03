@@ -4,6 +4,7 @@ export const studentNav: NavItem[] = [
   { to: "/student", labelKey: "nav.dashboard" },
   { to: "/student/announcements", labelKey: "nav.announcements" },
   { to: "/student/subjects", labelKey: "nav.subjects" },
+  { to: "/student/chat", labelKey: "nav.messages" },
   { to: "/student/attendance", labelKey: "nav.attendance" },
   { to: "/student/grades", labelKey: "nav.grades" },
 ];
@@ -12,6 +13,7 @@ export const teacherNav: NavItem[] = [
   { to: "/teacher", labelKey: "nav.subjects" },
   { to: "/teacher/grades", labelKey: "nav.grades" },
   { to: "/teacher/banks", labelKey: "nav.question_banks" },
+  { to: "/teacher/chat", labelKey: "nav.messages" },
 ];
 
 export function staffNav(isAdmin: boolean): NavItem[] {
@@ -19,6 +21,7 @@ export function staffNav(isAdmin: boolean): NavItem[] {
     { to: "/staff", labelKey: "nav.dashboard" },
     { to: "/staff/requests", labelKey: "nav.requests" },
     { to: "/staff/announcements", labelKey: "nav.announcements" },
+    { to: "/staff/chat", labelKey: "nav.messages" },
     { to: "/staff/attendance", labelKey: "nav.attendance" },
     { to: "/staff/grades", labelKey: "nav.grades" },
     { to: "/staff/teachers", labelKey: "nav.teachers" },
