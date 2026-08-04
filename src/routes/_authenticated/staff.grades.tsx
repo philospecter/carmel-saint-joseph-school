@@ -160,6 +160,8 @@ function Page() {
     onSuccess: (r) => {
       toast.success(`Approved ${r.approved} grade(s)`);
       qc.invalidateQueries({ queryKey: gradesKey });
+      qc.invalidateQueries({ queryKey: ["grades-pending-all"] });
+      qc.invalidateQueries({ queryKey: ["grades-pending-cells"] });
     },
     onError: (e) => toast.error(formatSupabaseError(e)),
   });
@@ -332,7 +334,7 @@ function Page() {
                 enteredById={me?.userId ?? ""}
                 showAudit={isAdmin}
                 readOnly={readOnly}
-                isAdmin={isAdmin}
+                isAdmin={canManageApprovals}
                 onApprove={(id) => approveM.mutate([id])}
                 onSaved={() => {
                   qc.invalidateQueries({ queryKey: gradesKey });
