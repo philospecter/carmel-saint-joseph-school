@@ -10,12 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Pencil, Lock, Clock } from "lucide-react";
 import { formatSupabaseError } from "@/lib/errors";
 import { listTermMonths } from "@/lib/settings.functions";
-import { listGradesForCell, getGradeCellMax, type GradeCellRow } from "@/lib/grades.functions";
+import { listGradesForCell, getGradeCellMax, setGradeCellMax, type GradeCellRow } from "@/lib/grades.functions";
 import { useCurrentYearId } from "@/lib/rosters";
 
 export const Route = createFileRoute("/_authenticated/teacher/grades")({ component: Page });
@@ -110,6 +111,28 @@ function Page() {
   const rosterReady = cellReady && sessionMax > 0;
   const showMonth = term === "term_1" || term === "term_2";
 
+  // Teachers may change the max score only while nothing in this cell is approved yet.
+  const anyApproved = (cellGrades ?? []).some((g) => !!g.approved_at);
+  const canEditMax = locked && !anyApproved;
+  const [editMaxOpen, setEditMaxOpen] = useState(false);
+  const [newMax, setNewMax] = useState("");
+  useEffect(() => { setEditMaxOpen(false); setNewMax(""); }, [subject, term, month]);
+  const setMaxFn = useServerFn(setGradeCellMax);
+  const setMaxM = useMutation({
+    mutationFn: () => {
+      const n = Number(newMax);
+      if (!Number.isFinite(n) || n <= 0) throw new Error(t("grades.session_max_invalid"));
+      return setMaxFn({ data: { subject_id: subject, term, month, new_max: n } });
+    },
+    onSuccess: () => {
+      toast.success(t("common.save"));
+      setEditMaxOpen(false);
+      qc.invalidateQueries({ queryKey: maxKey });
+      qc.invalidateQueries({ queryKey: gradesKey });
+    },
+    onError: (e) => toast.error(formatSupabaseError(e)),
+  });
+
   return (
     <Section title={t("nav.grades")}>
       <div className="rounded-md border border-blue-500/40 bg-blue-500/5 p-3 text-sm mb-4">
@@ -146,9 +169,40 @@ function Page() {
               onChange={(e) => setDraftMax(e.target.value)}
             />
             {locked && <Lock className="h-3.5 w-3.5 text-muted-foreground ms-1" />}
+            {canEditMax && (
+              <Button
+                size="icon"
+                variant="outline"
+                title={t("grades.edit_session_max")}
+                onClick={() => { setNewMax(String(effectiveMax)); setEditMaxOpen(true); }}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            )}
           </div>
+          {locked && anyApproved && (
+            <span className="text-xs text-muted-foreground">Approved — max score locked.</span>
+          )}
         </div>
       </div>
+
+      <Dialog open={editMaxOpen} onOpenChange={setEditMaxOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("grades.edit_session_max")}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Existing scores keep their value (capped at the new max). This is only allowed until an administrator approves these grades.
+          </p>
+          <Input type="number" min={1} step="any" value={newMax} onChange={(e) => setNewMax(e.target.value)} />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditMaxOpen(false)}>{t("common.cancel")}</Button>
+            <Button onClick={() => setMaxM.mutate()} disabled={setMaxM.isPending}>
+              {setMaxM.isPending ? t("common.loading") : t("common.save")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {!subject ? (
         <EmptyState text="Pick a subject." />
