@@ -127,10 +127,18 @@ export function useProfileNames(ids: string[]) {
     enabled: unique.length > 0,
     staleTime: 5 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("id, full_name").in("id", unique);
-      if (error) throw error;
       const map = new Map<string, string>();
-      for (const p of data ?? []) map.set(p.id, p.full_name);
+      // Students cannot read other profiles directly (RLS), so we resolve
+      // names through a security-definer RPC scoped to valid chat peers.
+      const { data: peers } = await (supabase as any).rpc("chat_peer_names");
+      for (const p of (peers ?? []) as { id: string; full_name: string }[]) {
+        if (unique.includes(p.id)) map.set(p.id, p.full_name);
+      }
+      const missing = unique.filter((id) => !map.has(id));
+      if (missing.length > 0) {
+        const { data } = await supabase.from("profiles").select("id, full_name").in("id", missing);
+        for (const p of data ?? []) map.set(p.id, p.full_name);
+      }
       return map;
     },
   });
