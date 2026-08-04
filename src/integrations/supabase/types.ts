@@ -867,6 +867,13 @@ export type Database = {
     }
     Functions: {
       approve_grades: { Args: { _ids: string[] }; Returns: number }
+      chat_peer_names: {
+        Args: never
+        Returns: {
+          full_name: string
+          id: string
+        }[]
+      }
       chat_relationship_exists: {
         Args: {
           _kind: string
