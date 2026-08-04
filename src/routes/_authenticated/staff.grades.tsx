@@ -13,10 +13,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Pencil, Lock, Check } from "lucide-react";
+import { Pencil, Lock, Check, ChevronRight } from "lucide-react";
 import { formatSupabaseError } from "@/lib/errors";
 import { listTermMonths } from "@/lib/settings.functions";
-import { listGradesForCell, getGradeCellMax, clearGradeCell, approveGrades, approveAllPending, countAllPending, type GradeCellRow } from "@/lib/grades.functions";
+import { listGradesForCell, getGradeCellMax, clearGradeCell, approveGrades, approveAllPending, countAllPending, listPendingCells, type GradeCellRow } from "@/lib/grades.functions";
 import { useCurrentYearId, resolveRosterYear } from "@/lib/rosters";
 
 export const Route = createFileRoute("/_authenticated/staff/grades")({
@@ -52,6 +52,7 @@ function Page() {
   const { year: yearId } = Route.useSearch();
   const readOnly = !!yearId;
   const isAdmin = !!me?.roles.includes("admin");
+  const canManageApprovals = isAdmin || !!me?.roles.includes("stage_manager");
   const stages = isAdmin ? [...STAGE_GROUPS] : me?.stages ?? [];
   const [stage, setStage] = useState<string>(stages[0] ?? "primary_1_2");
   const [grade, setGrade] = useState<string>(
@@ -159,17 +160,25 @@ function Page() {
     onSuccess: (r) => {
       toast.success(`Approved ${r.approved} grade(s)`);
       qc.invalidateQueries({ queryKey: gradesKey });
+      qc.invalidateQueries({ queryKey: ["grades-pending-all"] });
+      qc.invalidateQueries({ queryKey: ["grades-pending-cells"] });
     },
     onError: (e) => toast.error(formatSupabaseError(e)),
   });
   const pendingIds = (cellGrades ?? []).filter((g) => !g.approved_at).map((g) => g.id);
-  const canApprove = isAdmin && !readOnly && pendingIds.length > 0;
+  const canApprove = canManageApprovals && !readOnly && pendingIds.length > 0;
 
   const countAllFn = useServerFn(countAllPending);
   const { data: allPending } = useQuery({
     queryKey: ["grades-pending-all"],
-    enabled: isAdmin && !readOnly,
+    enabled: canManageApprovals && !readOnly,
     queryFn: () => countAllFn(),
+  });
+  const pendingCellsFn = useServerFn(listPendingCells);
+  const { data: pendingCells } = useQuery({
+    queryKey: ["grades-pending-cells"],
+    enabled: canManageApprovals && !readOnly,
+    queryFn: () => pendingCellsFn(),
   });
   const approveAllFn = useServerFn(approveAllPending);
   const approveAllM = useMutation({
@@ -177,10 +186,19 @@ function Page() {
     onSuccess: (r) => {
       toast.success(`Approved ${r.approved} grade(s) school-wide`);
       qc.invalidateQueries({ queryKey: ["grades-pending-all"] });
+      qc.invalidateQueries({ queryKey: ["grades-pending-cells"] });
       qc.invalidateQueries({ queryKey: gradesKey });
     },
     onError: (e) => toast.error(formatSupabaseError(e)),
   });
+
+  function openPendingCell(c: { stage_group: string; grade_level: string; subject_id: string; term: Term; month: number | null }) {
+    setStage(c.stage_group);
+    setGrade(c.grade_level);
+    setSubject(c.subject_id);
+    setTerm(c.term);
+    setMonth(c.month);
+  }
 
   return (
     <Section title={t("nav.grades")}>
@@ -189,12 +207,35 @@ function Page() {
           {t("year.viewing_past_readonly")}
         </div>
       )}
-      {isAdmin && !readOnly && (allPending?.count ?? 0) > 0 && (
-        <div className="rounded-md border border-primary/40 bg-primary/5 p-3 text-sm mb-4 flex items-center justify-between gap-3">
-          <span>{allPending!.count} pending grade(s) across all subjects this year.</span>
-          <Button size="sm" onClick={() => approveAllM.mutate()} disabled={approveAllM.isPending}>
-            <Check className="h-3.5 w-3.5 mr-1" /> Approve all pending (school-wide)
-          </Button>
+      {canManageApprovals && !readOnly && (allPending?.count ?? 0) > 0 && (
+        <div className="rounded-md border border-primary/40 bg-primary/5 p-3 text-sm mb-4">
+          <div className="flex items-center justify-between gap-3">
+            <span>{allPending!.count} pending grade(s) awaiting your approval this year.</span>
+            <Button size="sm" onClick={() => approveAllM.mutate()} disabled={approveAllM.isPending}>
+              <Check className="h-3.5 w-3.5 mr-1" /> Approve all pending
+            </Button>
+          </div>
+          {(pendingCells ?? []).length > 0 && (
+            <div className="mt-3 rounded-md border divide-y bg-background">
+              {(pendingCells ?? []).map((c) => (
+                <button
+                  key={`${c.subject_id}-${c.term}-${c.month ?? "n"}`}
+                  type="button"
+                  className="w-full text-start p-2 flex items-center justify-between gap-2 hover:bg-muted/50"
+                  onClick={() => openPendingCell({ ...c, term: c.term as Term })}
+                >
+                  <span className="min-w-0 truncate">
+                    {c.subject_name} — {t(`grade.${c.grade_level}`)} · {t(`term.${c.term}`)}
+                    {c.month !== null ? ` · ${MONTH_LABEL[c.month]}` : ""}
+                  </span>
+                  <span className="flex items-center gap-2 shrink-0">
+                    <Badge variant="outline" className="border-amber-500/50 text-amber-600">{c.pending_count}</Badge>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
       {canApprove && (
@@ -293,7 +334,7 @@ function Page() {
                 enteredById={me?.userId ?? ""}
                 showAudit={isAdmin}
                 readOnly={readOnly}
-                isAdmin={isAdmin}
+                isAdmin={canManageApprovals}
                 onApprove={(id) => approveM.mutate([id])}
                 onSaved={() => {
                   qc.invalidateQueries({ queryKey: gradesKey });

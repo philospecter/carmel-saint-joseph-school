@@ -866,6 +866,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_all_pending: { Args: never; Returns: number }
       approve_grades: { Args: { _ids: string[] }; Returns: number }
       chat_peer_names: {
         Args: never
@@ -900,6 +901,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      pending_grade_cells: {
+        Args: never
+        Returns: {
+          grade_level: Database["public"]["Enums"]["grade_level"]
+          month: number
+          pending_count: number
+          stage_group: Database["public"]["Enums"]["stage_group"]
+          subject_id: string
+          subject_name: string
+          term: Database["public"]["Enums"]["term_type"]
+        }[]
+      }
+      pending_grades_count: { Args: never; Returns: number }
       pending_promotion_count: { Args: never; Returns: number }
       preview_promotion_roster: {
         Args: never
