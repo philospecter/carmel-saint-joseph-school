@@ -64,46 +64,55 @@ export const approveGrades = createServerFn({ method: "POST" })
   });
 
 /**
- * Admin-only: approve every pending grade in the current academic year across all subjects.
+ * Approve every pending grade in the current academic year within the caller's
+ * scope (admins: whole school, stage managers: their stages).
  */
 export const approveAllPending = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ approved: number; pending: number }> => {
     const sb = context.supabase as any;
-    const { data: isAdmin } = await sb.rpc("has_role", { _user_id: context.userId, _role: "admin" });
-    if (!isAdmin) throw new Error("Only admins can approve grades");
-    const { data: yearId, error: yErr } = await sb.rpc("current_academic_year_id");
-    if (yErr) throw new Error(yErr.message);
-    const { data: rows, error } = await sb
-      .from("grades")
-      .select("id")
-      .is("approved_at", null)
-      .eq("academic_year_id", yearId);
+    const { data: pending } = await sb.rpc("pending_grades_count");
+    const { data: affected, error } = await sb.rpc("approve_all_pending");
     if (error) throw new Error(error.message);
-    const ids = (rows ?? []).map((r: { id: string }) => r.id);
-    if (ids.length === 0) return { approved: 0, pending: 0 };
-    const { data: affected, error: aErr } = await sb.rpc("approve_grades", { _ids: ids });
-    if (aErr) throw new Error(aErr.message);
-    return { approved: Number(affected ?? 0), pending: ids.length };
+    return { approved: Number(affected ?? 0), pending: Number(pending ?? 0) };
   });
 
 /**
- * Admin-only: count of pending grades across the entire current year.
+ * Count of pending grades in the caller's scope for the current year.
  */
 export const countAllPending = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ count: number }> => {
     const sb = context.supabase as any;
-    const { data: isAdmin } = await sb.rpc("has_role", { _user_id: context.userId, _role: "admin" });
-    if (!isAdmin) return { count: 0 };
-    const { data: yearId } = await sb.rpc("current_academic_year_id");
-    const { count, error } = await sb
-      .from("grades")
-      .select("id", { count: "exact", head: true })
-      .is("approved_at", null)
-      .eq("academic_year_id", yearId);
+    const { data: count, error } = await sb.rpc("pending_grades_count");
     if (error) throw new Error(error.message);
     return { count: Number(count ?? 0) };
+  });
+
+export type PendingCell = {
+  subject_id: string;
+  subject_name: string;
+  stage_group: string;
+  grade_level: string;
+  term: "term_1" | "term_2" | "midyear" | "final";
+  month: number | null;
+  pending_count: number;
+};
+
+/**
+ * Lists the exact (subject, term, month) cells that have grades awaiting
+ * approval, scoped to the caller (admin: all, stage manager: own stages).
+ */
+export const listPendingCells = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<PendingCell[]> => {
+    const { data, error } = await (context.supabase as any).rpc("pending_grade_cells");
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((r: PendingCell) => ({
+      ...r,
+      month: r.month === null ? null : Number(r.month),
+      pending_count: Number(r.pending_count),
+    }));
   });
 
 export const getGradeCellMax = createServerFn({ method: "POST" })
