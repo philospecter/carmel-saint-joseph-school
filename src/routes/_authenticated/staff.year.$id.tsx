@@ -237,7 +237,8 @@ function GradesPanel({ yearId, yearLabel }: { yearId: string; yearLabel: string 
         .select("user_id, is_graduated, profiles!student_enrollments_user_id_profiles_fkey(full_name, national_id)")
         .eq("academic_year_id", yearId as never)
         .eq("stage_group", stage as never)
-        .eq("grade_level", grade as never)).data ?? [],
+        .eq("grade_level", grade as never)
+        .eq("is_graduated", false)).data ?? [],
   });
 
   const cellReady = !!subject && (term === "midyear" || term === "final" || month !== "");
@@ -285,7 +286,8 @@ function GradesPanel({ yearId, yearLabel }: { yearId: string; yearLabel: string 
     const [{ data: enrolls }, { data: subs }, { data: grades }] = await Promise.all([
       supabase.from("student_enrollments")
         .select("user_id, stage_group, grade_level, profiles!student_enrollments_user_id_profiles_fkey(full_name, national_id)")
-        .eq("academic_year_id", yearId as never),
+        .eq("academic_year_id", yearId as never)
+        .eq("is_graduated", false),
       (supabase as any).from("subjects").select("id, name, stage_group, grade_level"),
       (supabase as any).from("grades").select("student_id, subject_id, term, month, score, max_score").eq("academic_year_id", yearId),
     ]);
@@ -428,7 +430,8 @@ function AttendancePanel({ yearId, yearLabel }: { yearId: string; yearLabel: str
         .select("user_id, is_graduated, profiles!student_enrollments_user_id_profiles_fkey(full_name, national_id)")
         .eq("academic_year_id", yearId as never)
         .eq("stage_group", stage as never)
-        .eq("grade_level", grade as never)).data ?? [],
+        .eq("grade_level", grade as never)
+        .eq("is_graduated", false)).data ?? [],
   });
 
   const { data: recs } = useQuery({
@@ -457,7 +460,8 @@ function AttendancePanel({ yearId, yearLabel }: { yearId: string; yearLabel: str
     const [{ data: enrolls }, { data: att }] = await Promise.all([
       supabase.from("student_enrollments")
         .select("user_id, stage_group, grade_level, profiles!student_enrollments_user_id_profiles_fkey(full_name, national_id)")
-        .eq("academic_year_id", yearId as never),
+        .eq("academic_year_id", yearId as never)
+        .eq("is_graduated", false),
       supabase.from("attendance").select("*").eq("academic_year_id", yearId as never),
     ]);
     const eMap = new Map((enrolls ?? []).map((e: any) => [e.user_id, e]));
