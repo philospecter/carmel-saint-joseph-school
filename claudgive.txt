@@ -40,7 +40,7 @@ type UserRow = {
   address: string | null;
   status: string | null;
   roles: Role[];
-  enrollment: { stage_group: string; grade_level: string; is_graduated: boolean } | null;
+  enrollment: { stage_group: string; grade_level: string } | null;
   managed_stages: string[];
 };
 
@@ -65,7 +65,7 @@ function Page() {
         supabase.from("user_roles").select("user_id, role"),
         supabase
           .from("student_enrollments")
-          .select("user_id, stage_group, grade_level, is_graduated")
+          .select("user_id, stage_group, grade_level")
           .eq("academic_year_id", currentYearId as never),
         supabase.from("stage_manager_assignments").select("user_id, stage_group"),
       ]);
@@ -75,21 +75,19 @@ function Page() {
         arr.push(r.role as Role);
         rolesByUser.set(r.user_id, arr);
       }
-      const enrollByUser = new Map((enrolls.data ?? []).map((e) => [e.user_id, { stage_group: e.stage_group as string, grade_level: e.grade_level as string, is_graduated: e.is_graduated as boolean }]));
+      const enrollByUser = new Map((enrolls.data ?? []).map((e) => [e.user_id, { stage_group: e.stage_group as string, grade_level: e.grade_level as string }]));
       const smByUser = new Map<string, string[]>();
       for (const s of sms.data ?? []) {
         const arr = smByUser.get(s.user_id) ?? [];
         arr.push(s.stage_group as string);
         smByUser.set(s.user_id, arr);
       }
-      return (profiles.data ?? [])
-        .filter((p) => enrollByUser.get(p.id)?.is_graduated !== true)
-        .map((p) => ({
-          ...p,
-          roles: rolesByUser.get(p.id) ?? [],
-          enrollment: enrollByUser.get(p.id) ?? null,
-          managed_stages: smByUser.get(p.id) ?? [],
-        })) as UserRow[];
+      return (profiles.data ?? []).map((p) => ({
+        ...p,
+        roles: rolesByUser.get(p.id) ?? [],
+        enrollment: enrollByUser.get(p.id) ?? null,
+        managed_stages: smByUser.get(p.id) ?? [],
+      })) as UserRow[];
     },
   });
 
