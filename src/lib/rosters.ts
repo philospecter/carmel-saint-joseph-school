@@ -4,11 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 /**
  * Shared roster helper for resolving the effective academic year.
  *
- * IMPORTANT: Any query against student_enrollments that is already scoped
- * to a specific academic_year_id (whether current or historical) MUST NOT
- * filter by is_graduated. That flag is a per-row historical marker; it
- * should NOT hide students from the roster of the year they graduated FROM.
- * Scoping by academic_year_id already isolates the correct row.
+ * IMPORTANT: Roster queries must scope by academic_year_id AND filter
+ * is_graduated = false. Graduated students are listed only in the
+ * dedicated "Graduates" section of a past year, never in class rosters,
+ * grade entry, attendance, or active-student counts.
  */
 
 export function useCurrentYearId() {

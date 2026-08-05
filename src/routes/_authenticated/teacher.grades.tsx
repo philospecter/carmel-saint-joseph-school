@@ -99,7 +99,8 @@ function Page() {
         .select("user_id, is_graduated, profiles!student_enrollments_user_id_profiles_fkey(full_name)")
         .eq("stage_group", selected!.subjects.stage_group as never)
         .eq("grade_level", selected!.subjects.grade_level as never)
-        .eq("academic_year_id", currentYearId!)).data ?? [],
+        .eq("academic_year_id", currentYearId!)
+        .eq("is_graduated", false)).data ?? [],
   });
 
   const [draftMax, setDraftMax] = useState<string>("");

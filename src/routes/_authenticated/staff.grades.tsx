@@ -101,7 +101,8 @@ function Page() {
         .select("user_id, is_graduated, profiles!student_enrollments_user_id_profiles_fkey(full_name)")
         .eq("stage_group", stage as never)
         .eq("grade_level", grade as never)
-        .eq("academic_year_id", effectiveYearId as never)).data ?? [],
+        .eq("academic_year_id", effectiveYearId as never)
+        .eq("is_graduated", false)).data ?? [],
   });
 
   const cellReady = !!subject && (term === "midyear" || term === "final" || month !== null);
