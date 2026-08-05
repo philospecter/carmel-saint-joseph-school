@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { useI18n } from "@/lib/i18n";
+import { useCurrentYearId } from "@/lib/rosters";
 import { Section, EmptyState } from "@/components/portal/PortalShell";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -11,10 +12,11 @@ export const Route = createFileRoute("/_authenticated/teacher/")({ component: Pa
 function Page() {
   const { t } = useI18n();
   const { data: me } = useMe();
+  const { data: currentYearId } = useCurrentYearId();
   const { data } = useQuery({
-    queryKey: ["teacher-assignments", me?.userId],
-    enabled: !!me?.userId,
-    queryFn: async () => (await supabase.from("teacher_assignments").select("id, subjects(id, name, stage_group, grade_level)").eq("teacher_id", me!.userId)).data ?? [],
+    queryKey: ["teacher-assignments", me?.userId, currentYearId],
+    enabled: !!me?.userId && !!currentYearId,
+    queryFn: async () => (await supabase.from("teacher_assignments").select("id, subjects(id, name, stage_group, grade_level)").eq("teacher_id", me!.userId).eq("academic_year_id", currentYearId!)).data ?? [],
   });
   return (
     <Section title={t("nav.subjects")}>
