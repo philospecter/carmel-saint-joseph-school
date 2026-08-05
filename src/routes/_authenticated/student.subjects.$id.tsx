@@ -7,12 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Attachments } from "@/components/files/Attachments";
+import { useCurrentYearId } from "@/lib/rosters";
 
 export const Route = createFileRoute("/_authenticated/student/subjects/$id")({ component: Page });
 
 function Page() {
   const { id } = Route.useParams();
   const { t } = useI18n();
+  const { data: currentYearId } = useCurrentYearId();
 
   const { data: subject } = useQuery({
     queryKey: ["subject", id],
