@@ -19,8 +19,9 @@ function Page() {
     queryFn: async () => (await supabase.from("subjects").select("*").eq("id", id).maybeSingle()).data,
   });
   const { data: assignments } = useQuery({
-    queryKey: ["subject-assignments", id],
-    queryFn: async () => (await supabase.from("teacher_assignments").select("id").eq("subject_id", id)).data ?? [],
+    queryKey: ["subject-assignments", id, currentYearId],
+    enabled: !!currentYearId,
+    queryFn: async () => (await supabase.from("teacher_assignments").select("id").eq("subject_id", id).eq("academic_year_id", currentYearId!)).data ?? [],
   });
   const assignmentIds = (assignments ?? []).map((a) => a.id);
   const { data: announcements } = useQuery({
