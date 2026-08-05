@@ -7,20 +7,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Attachments } from "@/components/files/Attachments";
+import { useCurrentYearId } from "@/lib/rosters";
 
 export const Route = createFileRoute("/_authenticated/student/subjects/$id")({ component: Page });
 
 function Page() {
   const { id } = Route.useParams();
   const { t } = useI18n();
+  const { data: currentYearId } = useCurrentYearId();
 
   const { data: subject } = useQuery({
     queryKey: ["subject", id],
     queryFn: async () => (await supabase.from("subjects").select("*").eq("id", id).maybeSingle()).data,
   });
   const { data: assignments } = useQuery({
-    queryKey: ["subject-assignments", id],
-    queryFn: async () => (await supabase.from("teacher_assignments").select("id").eq("subject_id", id)).data ?? [],
+    queryKey: ["subject-assignments", id, currentYearId],
+    enabled: !!currentYearId,
+    queryFn: async () => (await supabase.from("teacher_assignments").select("id").eq("subject_id", id).eq("academic_year_id", currentYearId!)).data ?? [],
   });
   const assignmentIds = (assignments ?? []).map((a) => a.id);
   const { data: announcements } = useQuery({

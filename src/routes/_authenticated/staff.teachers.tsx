@@ -18,6 +18,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getTeacherActivity } from "@/lib/teacher-activity.functions";
 import { Badge } from "@/components/ui/badge";
 import { Activity } from "lucide-react";
+import { useCurrentYearId } from "@/lib/rosters";
 
 export const Route = createFileRoute("/_authenticated/staff/teachers")({ component: Page });
 
@@ -88,10 +89,12 @@ function TeacherCard({ teacher }: { teacher: { id: string; full_name: string; em
   const qc = useQueryClient();
   const isAdmin = !!me?.roles.includes("admin");
   const myStages = new Set(me?.stages ?? []);
+  const { data: currentYearId } = useCurrentYearId();
 
   const { data: assignments } = useQuery({
-    queryKey: ["teacher-asg", teacher.id],
-    queryFn: async () => (await supabase.from("teacher_assignments").select("id, subject_id, subjects(id, name, stage_group, grade_level)").eq("teacher_id", teacher.id)).data ?? [],
+    queryKey: ["teacher-asg", teacher.id, currentYearId],
+    enabled: !!currentYearId,
+    queryFn: async () => (await supabase.from("teacher_assignments").select("id, subject_id, subjects(id, name, stage_group, grade_level)").eq("teacher_id", teacher.id).eq("academic_year_id", currentYearId!)).data ?? [],
   });
 
   const [stage, setStage] = useState<string>("");

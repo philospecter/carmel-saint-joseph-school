@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { useState } from "react";
 import { toast } from "sonner";
-import { AlertTriangle, GraduationCap, Pencil, Trash2, Star } from "lucide-react";
+import { AlertTriangle, GraduationCap, Pencil, Trash2 } from "lucide-react";
 import { useMe } from "@/hooks/use-me";
 import { supabase } from "@/integrations/supabase/client";
 import { formatSupabaseError } from "@/lib/errors";
@@ -18,7 +18,6 @@ import {
   listAcademicYears,
   deleteAcademicYear,
   renameAcademicYear,
-  setCurrentAcademicYear,
   type AcademicYear,
 } from "@/lib/academic-years.functions";
 import { useI18n } from "@/lib/i18n";
@@ -129,14 +128,12 @@ function YearRow({ year, allYears, qc }: { year: AcademicYear; allYears: Academi
   const { data: me } = useMe();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [setCurrentOpen, setSetCurrentOpen] = useState(false);
   const [newLabel, setNewLabel] = useState(year.label);
   const [password, setPassword] = useState("");
   const [confirmText, setConfirmText] = useState("");
 
   const renameFn = useServerFn(renameAcademicYear);
   const deleteFn = useServerFn(deleteAcademicYear);
-  const setCurrentFn = useServerFn(setCurrentAcademicYear);
 
   const counts = useQuery({
     queryKey: ["year-counts", year.id],
@@ -196,16 +193,6 @@ function YearRow({ year, allYears, qc }: { year: AcademicYear; allYears: Academi
     onError: (e) => toast.error(formatSupabaseError(e)),
   });
 
-  const setCurrentM = useMutation({
-    mutationFn: () => setCurrentFn({ data: { year_id: year.id } }),
-    onSuccess: () => {
-      toast.success(t("year.set_current_success"));
-      setSetCurrentOpen(false);
-      qc.invalidateQueries();
-    },
-    onError: (e) => toast.error(formatSupabaseError(e)),
-  });
-
   return (
     <div className="p-3 flex items-center justify-between gap-3 flex-wrap">
       <div>
@@ -221,13 +208,6 @@ function YearRow({ year, allYears, qc }: { year: AcademicYear; allYears: Academi
         {!year.is_current && (
           <Button size="sm" variant="outline" asChild>
             <Link to="/staff/year/$id" params={{ id: year.id }}>{t("year.view")}</Link>
-          </Button>
-        )}
-
-        {!year.is_current && (
-          <Button size="sm" variant="outline" onClick={() => setSetCurrentOpen(true)}>
-            <Star className="h-3.5 w-3.5 mr-1" />
-            {t("year.set_current")}
           </Button>
         )}
 
@@ -270,20 +250,6 @@ function YearRow({ year, allYears, qc }: { year: AcademicYear; allYears: Academi
             <Button variant="outline" onClick={() => setEditOpen(false)}>{t("common.cancel")}</Button>
             <Button onClick={() => renameM.mutate()} disabled={renameM.isPending || !newLabel.trim() || newLabel.trim() === year.label}>
               {renameM.isPending ? t("common.loading") : t("common.save")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Set as current */}
-      <Dialog open={setCurrentOpen} onOpenChange={setSetCurrentOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{t("year.set_current")}</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">{t("year.set_current_confirm")}</p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSetCurrentOpen(false)}>{t("common.cancel")}</Button>
-            <Button onClick={() => setCurrentM.mutate()} disabled={setCurrentM.isPending}>
-              {setCurrentM.isPending ? t("common.loading") : t("year.set_current")}
             </Button>
           </DialogFooter>
         </DialogContent>

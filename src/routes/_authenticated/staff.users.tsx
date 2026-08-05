@@ -60,7 +60,7 @@ function Page() {
     queryKey: ["admin-users", currentYearId ?? ""],
     enabled: isAdmin && !!currentYearId,
     queryFn: async () => {
-      const [profiles, roles, enrolls, sms] = await Promise.all([
+      const [profiles, roles, enrolls, sms, graduated] = await Promise.all([
         supabase.from("profiles").select("id, full_name, national_id, mobile, email, address, status").order("full_name"),
         supabase.from("user_roles").select("user_id, role"),
         supabase
@@ -68,6 +68,7 @@ function Page() {
           .select("user_id, stage_group, grade_level, is_graduated")
           .eq("academic_year_id", currentYearId as never),
         supabase.from("stage_manager_assignments").select("user_id, stage_group"),
+        supabase.from("student_enrollments").select("user_id").eq("is_graduated", true),
       ]);
       const rolesByUser = new Map<string, Role[]>();
       for (const r of roles.data ?? []) {
@@ -76,6 +77,7 @@ function Page() {
         rolesByUser.set(r.user_id, arr);
       }
       const enrollByUser = new Map((enrolls.data ?? []).map((e) => [e.user_id, { stage_group: e.stage_group as string, grade_level: e.grade_level as string, is_graduated: e.is_graduated as boolean }]));
+      const graduatedIds = new Set((graduated.data ?? []).map((g) => g.user_id as string));
       const smByUser = new Map<string, string[]>();
       for (const s of sms.data ?? []) {
         const arr = smByUser.get(s.user_id) ?? [];
@@ -84,6 +86,8 @@ function Page() {
       }
       return (profiles.data ?? [])
         .filter((p) => enrollByUser.get(p.id)?.is_graduated !== true)
+        // Graduated students have no active current-year enrollment — hide them entirely.
+        .filter((p) => !(graduatedIds.has(p.id) && !enrollByUser.get(p.id)))
         .map((p) => ({
           ...p,
           roles: rolesByUser.get(p.id) ?? [],
