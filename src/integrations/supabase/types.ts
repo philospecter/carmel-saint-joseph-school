@@ -519,6 +519,32 @@ export type Database = {
           },
         ]
       }
+      message_reads: {
+        Row: {
+          conversation_id: string
+          last_read_at: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          last_read_at?: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          last_read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reads_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           body: string
@@ -885,6 +911,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      chat_unread: {
+        Args: never
+        Returns: {
+          conversation_id: string
+          kind: string
+          other_id: string
+          subject_id: string
+          teacher_id: string
+          unread: number
+        }[]
+      }
       current_academic_year_id: { Args: never; Returns: string }
       delete_academic_year: { Args: { _year: string }; Returns: undefined }
       has_role: {
@@ -900,6 +937,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      mark_conversation_read: {
+        Args: { _conversation: string }
+        Returns: undefined
       }
       pending_grade_cells: {
         Args: never

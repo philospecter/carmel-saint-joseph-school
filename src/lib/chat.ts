@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export type ChatKind = "teacher_student" | "sm_teacher";
+export type ChatKind = "teacher_student" | "sm_teacher" | "admin_user";
 
 export type ChatMessage = {
   id: string;
@@ -117,6 +117,71 @@ export async function sendMessage(conversationId: string, senderId: string, body
     body: text,
   });
   if (error) throw error;
+}
+
+export type UnreadRow = {
+  conversation_id: string;
+  kind: ChatKind;
+  teacher_id: string;
+  other_id: string;
+  subject_id: string | null;
+  unread: number;
+};
+
+/** Unread message counts per conversation for the signed-in user. */
+export function useUnread() {
+  const qc = useQueryClient();
+  const query = useQuery({
+    queryKey: ["chat-unread"],
+    refetchInterval: 30_000,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("chat_unread");
+      if (error) throw error;
+      return (data ?? []) as UnreadRow[];
+    },
+  });
+
+  useEffect(() => {
+    const channel = sb()
+      .channel("chat-unread-watch")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, () => {
+        qc.invalidateQueries({ queryKey: ["chat-unread"] });
+      })
+      .subscribe();
+    return () => { sb().removeChannel(channel); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return query;
+}
+
+export function unreadKeyOf(r: { kind: string; teacher_id: string; other_id: string; subject_id: string | null }) {
+  return `${r.kind}|${r.teacher_id}|${r.other_id}|${r.subject_id ?? ""}`;
+}
+
+export function useUnreadTotal() {
+  const { data } = useUnread();
+  return (data ?? []).reduce((n, r) => n + r.unread, 0);
+}
+
+export async function markConversationRead(conversationId: string) {
+  await (supabase as any).rpc("mark_conversation_read", { _conversation: conversationId });
+}
+
+/** Admins who have opened a conversation with the signed-in user. */
+export function useAdminChats(meId: string) {
+  return useQuery({
+    queryKey: ["chat-admin-threads", meId],
+    enabled: !!meId,
+    queryFn: async () => {
+      const { data, error } = await sb()
+        .from("conversations")
+        .select("teacher_id")
+        .eq("kind", "admin_user")
+        .eq("other_id", meId);
+      if (error) throw error;
+      return Array.from(new Set(((data ?? []) as { teacher_id: string }[]).map((r) => r.teacher_id)));
+    },
+  });
 }
 
 /** Resolves display names for a set of user ids. */

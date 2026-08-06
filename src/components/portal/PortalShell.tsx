@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQueryClient } from "@tanstack/react-query";
 import { Menu, LogOut } from "lucide-react";
+import { useUnreadTotal } from "@/lib/chat";
 
 export type NavItem = { to: string; labelKey: string };
 
@@ -27,6 +28,7 @@ export function PortalShell({
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const unreadTotal = useUnreadTotal();
 
   async function signOut() {
     await qc.cancelQueries();
@@ -49,16 +51,26 @@ export function PortalShell({
         <nav className="p-2 space-y-1">
           {nav.map((n) => {
             const active = path === n.to || (n.to !== "/" && path.startsWith(n.to + "/"));
+            const badge = n.labelKey === "nav.messages" ? unreadTotal : 0;
             return (
               <Link
                 key={n.to}
                 to={n.to}
                 onClick={() => setOpen(false)}
-                className={`block rounded-md px-3 py-2 text-sm transition-colors ${
+                className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
                   active ? "bg-primary text-primary-foreground" : "hover:bg-secondary"
                 }`}
               >
-                {t(n.labelKey)}
+                <span className="flex-1 truncate">{t(n.labelKey)}</span>
+                {badge > 0 && (
+                  <span
+                    className={`shrink-0 min-w-5 h-5 px-1.5 rounded-full text-[11px] font-semibold inline-flex items-center justify-center ${
+                      active ? "bg-primary-foreground text-primary" : "bg-primary text-primary-foreground"
+                    }`}
+                  >
+                    {badge > 99 ? "99+" : badge}
+                  </span>
+                )}
               </Link>
             );
           })}
