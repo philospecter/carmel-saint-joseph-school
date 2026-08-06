@@ -7,7 +7,7 @@ import { Section } from "@/components/portal/PortalShell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCurrentYearId } from "@/lib/rosters";
 import { ChatPanel, type ChatPeer } from "@/components/chat/ChatPanel";
-import { useProfileNames } from "@/lib/chat";
+import { useAdminChats, useProfileNames } from "@/lib/chat";
 
 export const Route = createFileRoute("/_authenticated/teacher/chat")({
   head: () => ({
@@ -80,6 +80,16 @@ function Page() {
     ...(managers ?? []).map((m) => m.user_id),
   ]);
   const nameOf = (id: string) => names.data?.get(id) ?? "—";
+  const { data: adminIds } = useAdminChats(teacherId);
+  const adminNames = useProfileNames(adminIds ?? []);
+  const adminPeers: ChatPeer[] = (adminIds ?? []).map((id) => ({
+    key: `admin:${id}`,
+    name: adminNames.data?.get(id) ?? "—",
+    subtitle: t("chat.administration"),
+    kind: "admin_user",
+    teacherId: id,
+    otherId: teacherId,
+  }));
 
   const studentPeers: ChatPeer[] = (students ?? []).map((s) => ({
     key: `${s.subject.id}:${s.user_id}`,
@@ -108,6 +118,7 @@ function Page() {
         <TabsList>
           <TabsTrigger value="students">{t("chat.students")}</TabsTrigger>
           <TabsTrigger value="sm">{t("chat.stage_manager")}</TabsTrigger>
+          <TabsTrigger value="admins">{t("chat.administration")}</TabsTrigger>
         </TabsList>
         <TabsContent value="students" className="mt-4">
           <ChatPanel
@@ -125,6 +136,14 @@ function Page() {
             yearId={yearId ?? null}
             loading={loadingA || loadingM}
             emptyText={t("chat.no_managers")}
+          />
+        </TabsContent>
+        <TabsContent value="admins" className="mt-4">
+          <ChatPanel
+            peers={adminPeers}
+            meId={teacherId}
+            yearId={yearId ?? null}
+            emptyText={t("chat.no_admins")}
           />
         </TabsContent>
       </Tabs>
