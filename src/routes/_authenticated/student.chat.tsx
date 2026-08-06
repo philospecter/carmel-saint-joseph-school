@@ -55,7 +55,7 @@ function Page() {
   const { data: adminIds } = useAdminChats(me?.userId ?? "");
   const adminNames = useProfileNames(adminIds ?? []);
 
-  const peers: ChatPeer[] = (rows ?? [])
+  const teacherPeers: ChatPeer[] = (rows ?? [])
     .filter((r) => !!r.subjects)
     .map((r) => ({
       key: `${r.subjects!.id}:${r.teacher_id}`,
@@ -65,17 +65,18 @@ function Page() {
       teacherId: r.teacher_id,
       otherId: me?.userId ?? "",
       subjectId: r.subjects!.id,
-    }))
-    .concat(
-      (adminIds ?? []).map((id) => ({
-        key: `admin:${id}`,
-        name: adminNames.data?.get(id) ?? "—",
-        subtitle: t("chat.administration"),
-        kind: "admin_user" as const,
-        teacherId: id,
-        otherId: me?.userId ?? "",
-      })) as ChatPeer[],
-    );
+    }));
+
+  const adminPeers: ChatPeer[] = (adminIds ?? []).map((id) => ({
+    key: `admin:${id}`,
+    name: adminNames.data?.get(id) ?? "—",
+    subtitle: t("chat.administration"),
+    kind: "admin_user" as const,
+    teacherId: id,
+    otherId: me?.userId ?? "",
+  }));
+
+  const peers: ChatPeer[] = [...teacherPeers, ...adminPeers];
 
   return (
     <Section title={t("nav.messages")}>
