@@ -6,7 +6,7 @@ import { useI18n } from "@/lib/i18n";
 import { Section } from "@/components/portal/PortalShell";
 import { useCurrentYearId } from "@/lib/rosters";
 import { ChatPanel, type ChatPeer } from "@/components/chat/ChatPanel";
-import { useProfileNames } from "@/lib/chat";
+import { useAdminChats, useProfileNames } from "@/lib/chat";
 
 export const Route = createFileRoute("/_authenticated/student/chat")({
   head: () => ({
@@ -52,6 +52,8 @@ function Page() {
   });
 
   const names = useProfileNames((rows ?? []).map((r) => r.teacher_id));
+  const { data: adminIds } = useAdminChats(me?.userId ?? "");
+  const adminNames = useProfileNames(adminIds ?? []);
 
   const peers: ChatPeer[] = (rows ?? [])
     .filter((r) => !!r.subjects)
@@ -63,7 +65,17 @@ function Page() {
       teacherId: r.teacher_id,
       otherId: me?.userId ?? "",
       subjectId: r.subjects!.id,
-    }));
+    }))
+    .concat(
+      (adminIds ?? []).map((id) => ({
+        key: `admin:${id}`,
+        name: adminNames.data?.get(id) ?? "—",
+        subtitle: t("chat.administration"),
+        kind: "admin_user" as const,
+        teacherId: id,
+        otherId: me?.userId ?? "",
+      })) as ChatPeer[],
+    );
 
   return (
     <Section title={t("nav.messages")}>
