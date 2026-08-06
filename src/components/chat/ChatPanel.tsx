@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Send, ArrowLeft, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/lib/i18n";
 import { formatSupabaseError } from "@/lib/errors";
-import { openConversation, sendMessage, useMessages, type ChatKind } from "@/lib/chat";
+import {
+  markConversationRead,
+  openConversation,
+  sendMessage,
+  unreadKeyOf,
+  useMessages,
+  useUnread,
+  type ChatKind,
+} from "@/lib/chat";
 
 export type ChatPeer = {
   /** stable key for the list */
@@ -36,6 +44,17 @@ export function ChatPanel({
   const { t } = useI18n();
   const [search, setSearch] = useState("");
   const [active, setActive] = useState<ChatPeer | null>(null);
+  const { data: unread } = useUnread();
+
+  const unreadByPeer = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of unread ?? []) m.set(unreadKeyOf(r), r.unread);
+    return m;
+  }, [unread]);
+  const peerUnread = (p: ChatPeer) =>
+    unreadByPeer.get(
+      unreadKeyOf({ kind: p.kind, teacher_id: p.teacherId, other_id: p.otherId, subject_id: p.subjectId ?? null }),
+    ) ?? 0;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -59,7 +78,9 @@ export function ChatPanel({
           ) : filtered.length === 0 ? (
             <div className="p-4 text-sm text-muted-foreground">{emptyText}</div>
           ) : (
-            filtered.map((p) => (
+            filtered.map((p) => {
+              const n = peerUnread(p);
+              return (
               <button
                 key={p.key}
                 type="button"
@@ -68,10 +89,18 @@ export function ChatPanel({
                   active?.key === p.key ? "bg-secondary" : ""
                 }`}
               >
-                <div className="text-sm font-medium truncate">{p.name}</div>
+                <div className="flex items-center gap-2">
+                  <div className="text-sm font-medium truncate flex-1">{p.name}</div>
+                  {n > 0 && (
+                    <span className="shrink-0 min-w-5 h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold inline-flex items-center justify-center">
+                      {n > 99 ? "99+" : n}
+                    </span>
+                  )}
+                </div>
                 {p.subtitle && <div className="text-xs text-muted-foreground truncate">{p.subtitle}</div>}
               </button>
-            ))
+              );
+            })
           )}
         </div>
       </div>
@@ -83,7 +112,14 @@ export function ChatPanel({
             <div className="text-sm">{t("chat.pick_person")}</div>
           </div>
         ) : (
-          <Thread key={active.key} peer={active} meId={meId} yearId={yearId} onBack={() => setActive(null)} />
+          <Thread
+            key={active.key}
+            peer={active}
+            meId={meId}
+            yearId={yearId}
+            unread={peerUnread(active)}
+            onBack={() => setActive(null)}
+          />
         )}
       </div>
     </div>
@@ -94,14 +130,17 @@ function Thread({
   peer,
   meId,
   yearId,
+  unread,
   onBack,
 }: {
   peer: ChatPeer;
   meId: string;
   yearId: string | null;
+  unread: number;
   onBack: () => void;
 }) {
   const { t } = useI18n();
+  const qc = useQueryClient();
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [openError, setOpenError] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -127,6 +166,13 @@ function Thread({
   const { data: messages, isLoading } = useMessages(conversationId);
 
   useEffect(() => {
+    if (!conversationId) return;
+    markConversationRead(conversationId)
+      .then(() => qc.invalidateQueries({ queryKey: ["chat-unread"] }))
+      .catch(() => {});
+  }, [conversationId, messages?.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "end" });
   }, [messages?.length, conversationId]);
 
@@ -146,7 +192,14 @@ function Thread({
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="min-w-0">
-          <div className="text-sm font-medium truncate">{peer.name}</div>
+          <div className="flex items-center gap-2">
+            <div className="text-sm font-medium truncate">{peer.name}</div>
+            {unread > 0 && (
+              <span className="shrink-0 min-w-5 h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold inline-flex items-center justify-center">
+                {unread > 99 ? "99+" : unread}
+              </span>
+            )}
+          </div>
           {peer.subtitle && <div className="text-xs text-muted-foreground truncate">{peer.subtitle}</div>}
         </div>
       </div>
