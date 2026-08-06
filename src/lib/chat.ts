@@ -167,6 +167,23 @@ export async function markConversationRead(conversationId: string) {
   await (supabase as any).rpc("mark_conversation_read", { _conversation: conversationId });
 }
 
+/** Admins who have opened a conversation with the signed-in user. */
+export function useAdminChats(meId: string) {
+  return useQuery({
+    queryKey: ["chat-admin-threads", meId],
+    enabled: !!meId,
+    queryFn: async () => {
+      const { data, error } = await sb()
+        .from("conversations")
+        .select("teacher_id")
+        .eq("kind", "admin_user")
+        .eq("other_id", meId);
+      if (error) throw error;
+      return Array.from(new Set(((data ?? []) as { teacher_id: string }[]).map((r) => r.teacher_id)));
+    },
+  });
+}
+
 /** Resolves display names for a set of user ids. */
 export function useProfileNames(ids: string[]) {
   const unique = Array.from(new Set(ids.filter(Boolean))).sort();
