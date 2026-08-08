@@ -17,6 +17,11 @@ import { z } from "zod";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
+  validateSearch: (s: Record<string, unknown>): { next?: string } => {
+    const raw = s.next;
+    const safe = typeof raw === "string" && raw.startsWith("/") && !raw.startsWith("//") ? raw : undefined;
+    return safe ? { next: safe } : {};
+  },
   head: () => ({ meta: [{ title: "Sign in – Carmel Saint Joseph Portal" }, { name: "robots", content: "noindex" }] }),
   component: AuthPage,
   errorComponent: ({ error }) => <div className="p-8 text-center text-destructive">{error.message}</div>,
@@ -27,6 +32,7 @@ const STUDENT_DOMAIN = "students.carmelstjoseph.local";
 function AuthPage() {
   const { t, locale, setLocale, dir } = useI18n();
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
 
   useEffect(() => {
     // fire seed once (idempotent, safe if it errors)
@@ -37,11 +43,15 @@ function AuthPage() {
     (async () => {
       const me = await fetchMe();
       if (me) {
+        if (next) {
+          window.location.replace(next);
+          return;
+        }
         const to = primaryPortal(me.roles);
         if (to) navigate({ to, replace: true });
       }
     })();
-  }, [navigate]);
+  }, [navigate, next]);
 
   return (
     <div dir={dir} className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-background flex items-center justify-center p-4">
@@ -68,7 +78,7 @@ function AuthPage() {
                 <TabsTrigger value="login">{t("auth.login")}</TabsTrigger>
                 <TabsTrigger value="signup">{t("auth.signup")}</TabsTrigger>
               </TabsList>
-              <TabsContent value="login" className="mt-4"><LoginForm /></TabsContent>
+              <TabsContent value="login" className="mt-4"><LoginForm next={next} /></TabsContent>
               <TabsContent value="signup" className="mt-4"><SignupForm /></TabsContent>
             </Tabs>
           </CardContent>
@@ -78,7 +88,7 @@ function AuthPage() {
   );
 }
 
-function LoginForm() {
+function LoginForm({ next }: { next?: string }) {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [identifier, setIdentifier] = useState("");
@@ -100,7 +110,8 @@ function LoginForm() {
         return;
       }
       const to = me ? primaryPortal(me.roles) : null;
-      if (to) navigate({ to, replace: true });
+      if (next) window.location.replace(next);
+      else if (to) navigate({ to, replace: true });
       else navigate({ to: "/", replace: true });
     } catch (err) {
       toast.error(formatSupabaseError(err));
