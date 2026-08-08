@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -130,6 +130,7 @@ export type UnreadRow = {
 
 /** Unread message counts per conversation for the signed-in user. */
 export function useUnread() {
+  const channelName = useRef(`chat-unread-watch-${Math.random().toString(36).slice(2)}`).current;
   const qc = useQueryClient();
   const query = useQuery({
     queryKey: ["chat-unread"],
@@ -143,7 +144,7 @@ export function useUnread() {
 
   useEffect(() => {
     const channel = sb()
-      .channel("chat-unread-watch")
+      .channel(channelName)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, () => {
         qc.invalidateQueries({ queryKey: ["chat-unread"] });
       })
