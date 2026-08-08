@@ -69,7 +69,7 @@ export function useMe() {
   return useQuery({ queryKey: ["me"], queryFn: fetchMe, staleTime: 30_000 });
 }
 
-export function primaryPortal(roles: Role[]): "/admin" | "/staff" | "/teacher" | "/student" | null {
+export function primaryPortal(roles: Role[]): "/staff" | "/teacher" | "/student" | null {
   if (roles.includes("admin" as Role)) return "/staff"; // admin uses staff shell
   if (roles.includes("stage_manager" as Role)) return "/staff";
   if (roles.includes("teacher" as Role)) return "/teacher";
