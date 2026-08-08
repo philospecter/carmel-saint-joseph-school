@@ -17,9 +17,11 @@ import { z } from "zod";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
-  validateSearch: (s: Record<string, unknown>) => ({
-    next: typeof s.next === "string" && s.next.startsWith("/") && !s.next.startsWith("//") ? s.next : undefined,
-  }),
+  validateSearch: (s: Record<string, unknown>): { next?: string } => {
+    const raw = s.next;
+    const safe = typeof raw === "string" && raw.startsWith("/") && !raw.startsWith("//") ? raw : undefined;
+    return safe ? { next: safe } : {};
+  },
   head: () => ({ meta: [{ title: "Sign in – Carmel Saint Joseph Portal" }, { name: "robots", content: "noindex" }] }),
   component: AuthPage,
   errorComponent: ({ error }) => <div className="p-8 text-center text-destructive">{error.message}</div>,
